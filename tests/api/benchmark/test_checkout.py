@@ -27,18 +27,18 @@ def checkout_with_shipping_method(checkout_with_variant, shipping_method):
 
 
 @pytest.fixture()
-def checkout_with_billing_address(checkout_with_shipping_method, address):
+def checkout_with_address(checkout_with_shipping_method, address):
     checkout = checkout_with_shipping_method
 
-    checkout.billing_address = address
+    checkout.address = address
     checkout.save()
 
     return checkout
 
 
 @pytest.fixture()
-def checkout_with_charged_payment(checkout_with_billing_address):
-    checkout = checkout_with_billing_address
+def checkout_with_charged_payment(checkout_with_address):
+    checkout = checkout_with_address
 
     total = checkout.get_total()
     taxed_total = TaxedMoney(total, total)
@@ -51,7 +51,7 @@ def checkout_with_charged_payment(checkout_with_billing_address):
 
     payment.charge_status = ChargeStatus.FULLY_CHARGED
     payment.captured_amount = payment.total
-    payment.checkout = checkout_with_billing_address
+    payment.checkout = checkout_with_address
     payment.save()
 
     payment.transactions.create(
@@ -339,7 +339,7 @@ def test_add_shipping_to_checkout(
 
 @pytest.mark.django_db
 @pytest.mark.count_queries(autouse=False)
-def test_add_billing_address_to_checkout(
+def test_add_address_to_checkout(
     api_client, graphql_address_data, checkout_with_shipping_method, count_queries
 ):
     query = """
@@ -474,7 +474,7 @@ def test_add_billing_address_to_checkout(
 @pytest.mark.django_db
 @pytest.mark.count_queries(autouse=False)
 def test_checkout_payment_charge(
-    api_client, graphql_address_data, checkout_with_billing_address, count_queries
+    api_client, graphql_address_data, checkout_with_address, count_queries
 ):
     query = """
         mutation createPayment($input: PaymentInput!, $checkoutId: ID!) {
@@ -488,7 +488,7 @@ def test_checkout_payment_charge(
     """
 
     variables = {
-        "checkoutId": Node.to_global_id("Checkout", checkout_with_billing_address.pk),
+        "checkoutId": Node.to_global_id("Checkout", checkout_with_address.pk),
         "input": {
             "billingAddress": graphql_address_data,
             "amount": 1000,  # 10.00 USD * 100

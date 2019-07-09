@@ -36,7 +36,7 @@ def details(request, token):
         "lines__variant__product__images",
         "fulfillments__lines__order_line",
     )
-    orders = orders.select_related("billing_address", "shipping_address", "user")
+    orders = orders.select_related("address", "user")
     order = get_object_or_404(orders, token=token)
     if order.is_open() and not order.customer_note:
         note_form = CustomerNoteForm(request.POST or None, instance=order)
@@ -50,11 +50,11 @@ def details(request, token):
 
 
 def payment(request, token):
-    orders = Order.objects.confirmed().filter(billing_address__isnull=False)
+    orders = Order.objects.confirmed().filter(address__isnull=False)
     orders = orders.prefetch_related(
         "lines__variant__images", "lines__variant__product__images"
     )
-    orders = orders.select_related("billing_address", "shipping_address", "user")
+    orders = orders.select_related("address", "user")
     order = get_object_or_404(orders, token=token)
     payments = order.payments.all()
     form_data = request.POST or None
@@ -71,7 +71,7 @@ def payment(request, token):
         waiting_payment_form = PaymentDeleteForm(
             None, order=order, initial={"payment_id": waiting_payment.id}
         )
-    if order.is_fully_paid() or not order.billing_address:
+    if order.is_fully_paid() or not order.address:
         form_data = None
     payment_form = None
     if not order.is_pre_authorized():
@@ -100,7 +100,7 @@ def start_payment(request, order, gateway):
             gateway=gateway,
             currency=order.total.gross.currency,
             email=order.user_email,
-            billing_address=order.billing_address,
+            address=order.address,
             customer_ip_address=get_client_ip(request),
             total=order.total.gross.amount,
             order=order,

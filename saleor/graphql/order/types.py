@@ -331,7 +331,7 @@ class Order(CountableDjangoObjectType):
         interfaces = [relay.Node]
         model = models.Order
         only_fields = [
-            "billing_address",
+            "address",
             "created",
             "customer_note",
             "discount_amount",
@@ -340,7 +340,6 @@ class Order(CountableDjangoObjectType):
             "gift_cards",
             "id",
             "language_code",
-            "shipping_address",
             "shipping_method",
             "shipping_method_name",
             "shipping_price",

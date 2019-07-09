@@ -14,9 +14,9 @@ from ..utils import (
     create_order,
     get_checkout_context,
     prepare_order_data,
-    update_billing_address_in_anonymous_checkout,
-    update_billing_address_in_checkout,
-    update_billing_address_in_checkout_with_shipping,
+    update_address_in_anonymous_checkout,
+    update_address_in_checkout,
+    update_address_in_checkout_with_shipping,
 )
 
 
@@ -74,7 +74,7 @@ def summary_with_shipping_view(request, checkout):
         checkout.user.addresses.all() if checkout.user else Address.objects.none()
     )
 
-    addresses_form, address_form, updated = update_billing_address_in_checkout_with_shipping(  # noqa
+    addresses_form, address_form, updated = update_address_in_checkout_with_shipping(  # noqa
         checkout, user_addresses, request.POST or None, request.country
     )
 
@@ -102,7 +102,7 @@ def anonymous_summary_without_shipping(request, checkout):
     if note_form.is_valid():
         note_form.save()
 
-    user_form, address_form, updated = update_billing_address_in_anonymous_checkout(
+    user_form, address_form, updated = update_address_in_anonymous_checkout(
         checkout, request.POST or None, request.country
     )
 
@@ -127,7 +127,7 @@ def summary_without_shipping(request, checkout):
 
     user_addresses = checkout.user.addresses.all()
 
-    addresses_form, address_form, updated = update_billing_address_in_checkout(
+    addresses_form, address_form, updated = update_address_in_checkout(
         checkout, user_addresses, request.POST or None, request.country
     )
 

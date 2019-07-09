@@ -51,10 +51,7 @@ class Checkout(models.Model):
     email = models.EmailField()
     token = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     quantity = models.PositiveIntegerField(default=0)
-    billing_address = models.ForeignKey(
-        Address, related_name="+", editable=False, null=True, on_delete=models.SET_NULL
-    )
-    shipping_address = models.ForeignKey(
+    address = models.ForeignKey(
         Address, related_name="+", editable=False, null=True, on_delete=models.SET_NULL
     )
     shipping_method = models.ForeignKey(

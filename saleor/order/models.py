@@ -74,10 +74,7 @@ class Order(models.Model):
     )
     language_code = models.CharField(max_length=35, default=settings.LANGUAGE_CODE)
     tracking_client_id = models.CharField(max_length=36, blank=True, editable=False)
-    billing_address = models.ForeignKey(
-        Address, related_name="+", editable=False, null=True, on_delete=models.SET_NULL
-    )
-    shipping_address = models.ForeignKey(
+    address = models.ForeignKey(
         Address, related_name="+", editable=False, null=True, on_delete=models.SET_NULL
     )
     user_email = models.EmailField(blank=True, default="")
@@ -183,10 +180,10 @@ class Order(models.Model):
         return total_paid
 
     def _index_billing_phone(self):
-        return self.billing_address.phone
+        return self.address.phone
 
     def _index_shipping_phone(self):
-        return self.shipping_address.phone
+        return self.address.phone
 
     def __iter__(self):
         return iter(self.lines.all())

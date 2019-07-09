@@ -6,7 +6,7 @@ from ..core.fields import PrefetchingConnectionField
 from ..payment.mutations import CheckoutPaymentCreate
 from .mutations import (
     CheckoutAddPromoCode,
-    CheckoutBillingAddressUpdate,
+    CheckoutAddressUpdate,
     CheckoutComplete,
     CheckoutCreate,
     CheckoutCustomerAttach,
@@ -16,7 +16,6 @@ from .mutations import (
     CheckoutLinesAdd,
     CheckoutLinesUpdate,
     CheckoutRemovePromoCode,
-    CheckoutShippingAddressUpdate,
     CheckoutShippingMethodUpdate,
     CheckoutUpdateVoucher,
 )
@@ -56,7 +55,7 @@ class CheckoutQueries(graphene.ObjectType):
 
 class CheckoutMutations(graphene.ObjectType):
     checkout_add_promo_code = CheckoutAddPromoCode.Field()
-    checkout_billing_address_update = CheckoutBillingAddressUpdate.Field()
+    checkout_address_update = CheckoutAddressUpdate.Field()
     checkout_complete = CheckoutComplete.Field()
     checkout_create = CheckoutCreate.Field()
     checkout_customer_attach = CheckoutCustomerAttach.Field()
@@ -67,6 +66,5 @@ class CheckoutMutations(graphene.ObjectType):
     checkout_lines_update = CheckoutLinesUpdate.Field()
     checkout_remove_promo_code = CheckoutRemovePromoCode.Field()
     checkout_payment_create = CheckoutPaymentCreate.Field()
-    checkout_shipping_address_update = CheckoutShippingAddressUpdate.Field()
     checkout_shipping_method_update = CheckoutShippingMethodUpdate.Field()
     checkout_update_voucher = CheckoutUpdateVoucher.Field()

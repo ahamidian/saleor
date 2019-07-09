@@ -96,13 +96,12 @@ def _validate_order(order: "Order") -> bool:
     avatax"""
     if not order.lines.count():
         return False
-    shipping_address = order.shipping_address
+    address = order.address
     is_shipping_required = order.is_shipping_required()
-    address = shipping_address or order.billing_address
 
     if not is_shipping_required and not address:
         return False
-    if not shipping_address:
+    if not address:
         return False
     if not order.shipping_method:
         return False
@@ -115,12 +114,11 @@ def _validate_checkout(checkout: "Checkout") -> bool:
     if not checkout.lines.count():
         return False
 
-    shipping_address = checkout.shipping_address
+    address = checkout.address
     is_shipping_required = checkout.is_shipping_required
-    address = shipping_address or checkout.billing_address
     if not is_shipping_required and not address:
         return False
-    if not shipping_address:
+    if not address:
         return False
     if not checkout.shipping_method:
         return False
@@ -325,7 +323,7 @@ def generate_request_data_from_checkout(
     discounts=None,
 ):
 
-    address = checkout.shipping_address or checkout.billing_address
+    address = checkout.address
     lines = get_checkout_lines_data(checkout, discounts)
 
     # FIXME after we introduce multicurrency this should be taken from Checkout obj
@@ -369,7 +367,7 @@ def get_checkout_tax_data(checkout: "Checkout", discounts) -> Dict[str, Any]:
 def get_order_tax_data(
     order: "Order", commit=False, force_refresh=False
 ) -> Dict[str, Any]:
-    address = order.shipping_address or order.billing_address
+    address = order.address
     lines = get_order_lines_data(order)
     transaction = (
         TransactionType.INVOICE if not order.is_draft() else TransactionType.ORDER

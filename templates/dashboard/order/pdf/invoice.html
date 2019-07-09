@@ -16,28 +16,18 @@
   <table width="100%" border="1" cellspacing="0">
     <thead>
     <tr>
-      {% if order.shipping_address %}
-        <th align="left" width="50%">
-          {% trans "Shipping address" context "Invoice shipping address" %}
-        </th>
-      {% endif %}
-      {% if order.billing_address %}
-        <th align="left" {% if order.shipping_address %} width="50%"{% endif %}>
-          {% trans "Billing address" context "Invoice billing address" %}
+      {% if order.address %}
+        <th align="left">
+          {% trans "Address" context "Address" %}
         </th>
       {% endif %}
     </tr>
     </thead>
     <tbody>
     <tr>
-      {% if order.shipping_address %}
+      {% if order.address %}
         <td>
-          {% include "dashboard/includes/_address.html" with address=order.shipping_address only %}
-        </td>
-      {% endif %}
-      {% if order.billing_address %}
-        <td>
-          {% include "dashboard/includes/_address.html" with address=order.billing_address only %}
+          {% include "dashboard/includes/_address.html" with address=order.address only %}
         </td>
       {% endif %}
     </tr>

@@ -140,8 +140,8 @@ def orders_with_addresses():
     orders = []
     for pk, name, lastname, email in ORDERS:
         addr = gen_address_for_user(name, lastname)
-        user = User.objects.create(default_shipping_address=addr, email=email)
-        order = Order.objects.create(user=user, billing_address=addr, pk=pk)
+        user = User.objects.create(tak_address=addr, email=email)
+        order = Order.objects.create(user=user, address=addr, pk=pk)
         orders.append(order)
     return orders
 
@@ -242,7 +242,7 @@ def users_with_addresses():
     users = []
     for firstname, lastname, email in USERS:
         addr = gen_address_for_user(firstname, lastname)
-        user = User.objects.create(default_billing_address=addr, email=email)
+        user = User.objects.create(tak_address=addr, email=email)
         users.append(user)
     return users
 

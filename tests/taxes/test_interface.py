@@ -84,7 +84,7 @@ def test_calculate_checkout_subtotal(
 
 
 def test_calculate_order_shipping(order, shipping_zone):
-    order.shipping_address = order.billing_address.get_copy()
+    order.address = order.address.get_copy()
     method = shipping_zone.shipping_methods.get()
     order.shipping_method_name = method.name
     order.shipping_method = method

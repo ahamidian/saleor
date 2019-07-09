@@ -98,10 +98,9 @@ def test_send_confirmation_emails_without_addresses(
     assert not order.lines.count()
 
     add_variant_to_order(order, digital_content.product_variant, quantity=1)
-    order.shipping_address = None
     order.shipping_method = None
-    order.billing_address = None
-    order.save(update_fields=["shipping_address", "shipping_method", "billing_address"])
+    order.address = None
+    order.save(update_fields=["address", "shipping_method"])
 
     send_email(order.pk)
     email_data = emails.collect_data_for_email(order.pk, template)

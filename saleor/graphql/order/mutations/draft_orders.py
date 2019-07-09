@@ -36,13 +36,12 @@ class OrderLineCreateInput(OrderLineInput):
 
 
 class DraftOrderInput(InputObjectType):
-    billing_address = AddressInput(description="Billing address of the customer.")
+    address = AddressInput(description="Address of the customer.")
     user = graphene.ID(
         descripton="Customer associated with the draft order.", name="user"
     )
     user_email = graphene.String(description="Email address of the customer.")
     discount = Decimal(description="Discount amount for the order.")
-    shipping_address = AddressInput(description="Shipping address of the customer.")
     shipping_method = graphene.ID(
         description="ID of a selected shipping method.", name="shippingMethod"
     )
@@ -72,8 +71,7 @@ class DraftOrderCreate(ModelMutation, I18nMixin):
 
     @classmethod
     def clean_input(cls, info, instance, data):
-        shipping_address = data.pop("shipping_address", None)
-        billing_address = data.pop("billing_address", None)
+        address = data.pop("address", None)
         cleaned_input = super().clean_input(info, instance, data)
 
         lines = data.pop("lines", None)
@@ -90,34 +88,23 @@ class DraftOrderCreate(ModelMutation, I18nMixin):
 
         # Set up default addresses if possible
         user = cleaned_input.get("user")
-        if user and not shipping_address:
-            cleaned_input["shipping_address"] = user.default_shipping_address
-        if user and not billing_address:
-            cleaned_input["billing_address"] = user.default_billing_address
+        if user and not address:
+            cleaned_input["address"] = user.tak_address
 
-        if shipping_address:
-            shipping_address = cls.validate_address(
-                shipping_address, instance=instance.shipping_address
+        if address:
+            address = cls.validate_address(
+                address, instance=instance.shipping_address
             )
-            cleaned_input["shipping_address"] = shipping_address
-        if billing_address:
-            billing_address = cls.validate_address(
-                billing_address, instance=instance.billing_address
-            )
-            cleaned_input["billing_address"] = billing_address
+            cleaned_input["address"] = address
         return cleaned_input
 
     @staticmethod
     def _save_addresses(info, instance: models.Order, cleaned_input):
         # Create the draft creation event
-        shipping_address = cleaned_input.get("shipping_address")
-        if shipping_address:
-            shipping_address.save()
-            instance.shipping_address = shipping_address.get_copy()
-        billing_address = cleaned_input.get("billing_address")
-        if billing_address:
-            billing_address.save()
-            instance.billing_address = billing_address.get_copy()
+        address = cleaned_input.get("address")
+        if address:
+            address.save()
+            instance.address = address.get_copy()
 
     @staticmethod
     def _save_lines(info, instance, quantities, variants):
@@ -147,18 +134,15 @@ class DraftOrderCreate(ModelMutation, I18nMixin):
         if not created:
             events.draft_order_created_event(order=instance, user=info.context.user)
 
-        instance.save(update_fields=["billing_address", "shipping_address"])
+        instance.save(update_fields=["address"])
 
     @classmethod
     def _refresh_lines_unit_price(cls, info, instance, cleaned_input, new_instance):
         if new_instance:
             # It is a new instance, all new lines have already updated prices.
             return
-        shipping_address = cleaned_input.get("shipping_address")
-        if shipping_address and instance.is_shipping_required():
-            update_order_prices(instance, info.context.discounts)
-        billing_address = cleaned_input.get("billing_address")
-        if billing_address and not instance.is_shipping_required():
+        address = cleaned_input.get("address")
+        if address and instance.is_shipping_required():
             update_order_prices(instance, info.context.discounts)
 
     @classmethod

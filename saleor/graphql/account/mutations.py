@@ -28,8 +28,7 @@ from ..core.types import Upload
 from ..core.utils import validate_image_file
 from .utils import CustomerDeleteMixin, StaffDeleteMixin, UserDeleteMixin
 
-BILLING_ADDRESS_FIELD = "default_billing_address"
-SHIPPING_ADDRESS_FIELD = "default_shipping_address"
+ADDRESS_FIELD = "tak_address"
 
 
 def send_user_password_reset_email(user, site):
@@ -91,10 +90,10 @@ class UserInput(graphene.InputObjectType):
 
 
 class UserAddressInput(graphene.InputObjectType):
-    default_billing_address = AddressInput(
+    tak_address = AddressInput(
         description="Billing address of the customer."
     )
-    default_shipping_address = AddressInput(
+    tak_address = AddressInput(
         description="Shipping address of the customer."
     )
 
@@ -136,35 +135,23 @@ class CustomerCreate(ModelMutation, I18nMixin):
 
     @classmethod
     def clean_input(cls, info, instance, data):
-        shipping_address_data = data.pop(SHIPPING_ADDRESS_FIELD, None)
-        billing_address_data = data.pop(BILLING_ADDRESS_FIELD, None)
+        address_data = data.pop(ADDRESS_FIELD, None)
         cleaned_input = super().clean_input(info, instance, data)
 
-        if shipping_address_data:
-            shipping_address = cls.validate_address(
-                shipping_address_data,
-                instance=getattr(instance, SHIPPING_ADDRESS_FIELD),
+        if address_data:
+            address = cls.validate_address(
+                address_data, instance=getattr(instance, ADDRESS_FIELD)
             )
-            cleaned_input[SHIPPING_ADDRESS_FIELD] = shipping_address
-
-        if billing_address_data:
-            billing_address = cls.validate_address(
-                billing_address_data, instance=getattr(instance, BILLING_ADDRESS_FIELD)
-            )
-            cleaned_input[BILLING_ADDRESS_FIELD] = billing_address
+            cleaned_input[ADDRESS_FIELD] = address
         return cleaned_input
 
     @classmethod
     def save(cls, info, instance, cleaned_input):
         # FIXME: save address in user.addresses as well
-        default_shipping_address = cleaned_input.get(SHIPPING_ADDRESS_FIELD)
-        if default_shipping_address:
-            default_shipping_address.save()
-            instance.default_shipping_address = default_shipping_address
-        default_billing_address = cleaned_input.get(BILLING_ADDRESS_FIELD)
-        if default_billing_address:
-            default_billing_address.save()
-            instance.default_billing_address = default_billing_address
+        tak_address = cleaned_input.get(ADDRESS_FIELD)
+        if tak_address:
+            tak_address.save()
+            instance.tak_address = tak_address
 
         is_creation = instance.pk is None
         super().save(info, instance, cleaned_input)

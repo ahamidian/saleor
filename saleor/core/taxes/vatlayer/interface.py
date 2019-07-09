@@ -39,7 +39,7 @@ def calculate_checkout_subtotal(
     checkout: "Checkout", discounts: List["DiscountInfo"]
 ) -> TaxedMoney:
     """Calculate subtotal gross for checkout"""
-    address = checkout.shipping_address or checkout.billing_address
+    address = checkout.address
     lines = checkout.lines.prefetch_related("variant__product__product_type")
     total = checkout.get_total()
     lines_total = zero_taxed_money(currency=total.currency)
@@ -55,7 +55,7 @@ def calculate_checkout_shipping(
     checkout: "Checkout", _: List["DiscountInfo"]
 ) -> TaxedMoney:
     """Calculate shipping gross for checkout"""
-    address = checkout.shipping_address or checkout.billing_address
+    address = checkout.address
     taxes = get_taxes_for_address(address)
     if not checkout.shipping_method:
         total = checkout.get_total()
@@ -64,7 +64,7 @@ def calculate_checkout_shipping(
 
 
 def calculate_order_shipping(order: "Order") -> TaxedMoney:
-    address = order.shipping_address or order.billing_address
+    address = order.address
     taxes = get_taxes_for_address(address)
     if not order.shipping_method:
         return zero_taxed_money(order.total.currency)
@@ -72,7 +72,7 @@ def calculate_order_shipping(order: "Order") -> TaxedMoney:
 
 
 def calculate_order_line_unit(order_line: "OrderLine") -> TaxedMoney:
-    address = order_line.order.shipping_address or order_line.order.billing_address
+    address = order_line.order.address
     country = address.country if address else None
     variant = order_line.variant
     return apply_taxes_to_product(variant.product, order_line.unit_price_net, country)
@@ -81,10 +81,7 @@ def calculate_order_line_unit(order_line: "OrderLine") -> TaxedMoney:
 def calculate_checkout_line_total(
     checkout_line: "CheckoutLine", discounts: List["DiscountInfo"]
 ):
-    address = (
-        checkout_line.checkout.shipping_address
-        or checkout_line.checkout.billing_address
-    )
+    address = (checkout_line.checkout.address)
     price = checkout_line.variant.get_price(discounts) * checkout_line.quantity
     country = address.country if address else None
     return apply_taxes_to_product(checkout_line.variant.product, price, country)

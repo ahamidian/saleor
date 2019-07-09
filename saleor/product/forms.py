@@ -51,8 +51,8 @@ class ProductForm(AddToCheckoutForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         variant_field = self.fields["variant"]
-        shipping_address = self.checkout.shipping_address
-        country = shipping_address.country if shipping_address else self.country
+        address = self.checkout.address
+        country = address.country if address else self.country
         variant_field.update_field_data(
             self.product.variants.all(), self.discounts, country, self.taxes
         )

@@ -10,15 +10,15 @@ from ...core.filters import SortedFilterSet
 SORT_BY_FIELDS = (
     ("email", "email"),
     ("first_name", "name"),
-    ("default_billing_address__city", "location"),
+    ("tak_address__city", "location"),
 )
 
 SORT_BY_FIELDS_LABELS = {
     "email": pgettext_lazy("Customer list sorting option", "email"),
-    "default_billing_address__first_name": pgettext_lazy(
+    "tak_address__first_name": pgettext_lazy(
         "Customer list sorting option", "name"
     ),
-    "default_billing_address__city": pgettext_lazy(
+    "tak_address__city": pgettext_lazy(
         "Customer list sorting option", "location"
     ),
 }
@@ -59,16 +59,14 @@ class UserFilter(SortedFilterSet):
             Q(first_name__icontains=value)
             | Q(last_name__icontains=value)
             | Q(email__icontains=value)
-            | Q(default_billing_address__first_name__icontains=value)
-            | Q(default_billing_address__last_name__icontains=value)
         )
 
     def filter_by_location(self, queryset, name, value):
-        q = Q(default_billing_address__city__icontains=value)
-        q |= Q(default_billing_address__country__icontains=value)
+        q = Q(tak_address__city__icontains=value)
+        q |= Q(tak_address__country__icontains=value)
         country_codes = self.get_mapped_country_codes_from_search(value)
         for code in country_codes:
-            q |= Q(default_billing_address__country__icontains=code)
+            q |= Q(tak_address__country__icontains=code)
         return queryset.filter(q)
 
     def get_mapped_country_codes_from_search(self, value):

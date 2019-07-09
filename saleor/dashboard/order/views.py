@@ -135,7 +135,7 @@ def remove_draft_order(request, order_pk):
 @permission_required("order.manage_orders")
 def order_details(request, order_pk):
     qs = Order.objects.select_related(
-        "user", "shipping_address", "billing_address"
+        "user", "address"
     ).prefetch_related(
         "payments__transactions",
         "events__user",
@@ -356,13 +356,11 @@ def add_variant_to_order(request, order_pk):
 def order_address(request, order_pk, address_type):
     order = get_object_or_404(Order, pk=order_pk)
     update_prices = False
-    if address_type == "shipping":
-        address = order.shipping_address
-        success_msg = pgettext_lazy("Dashboard message", "Updated shipping address")
-        update_prices = True
-    else:
-        address = order.billing_address
-        success_msg = pgettext_lazy("Dashboard message", "Updated billing address")
+
+    address = order.address
+    success_msg = pgettext_lazy("Dashboard message", "Updated address")
+    update_prices = True
+
     form = AddressForm(request.POST or None, instance=address)
     if form.is_valid():
         updated_address = form.save()
@@ -540,7 +538,7 @@ def order_voucher_remove(request, order_pk):
 @permission_required("order.manage_orders")
 def order_invoice(request, order_pk):
     orders = Order.objects.confirmed().prefetch_related(
-        "user", "shipping_address", "billing_address", "voucher"
+        "user", "address", "voucher"
     )
     order = get_object_or_404(orders, pk=order_pk)
     absolute_url = get_statics_absolute_url(request)
@@ -575,7 +573,7 @@ def mark_order_as_paid(request, order_pk):
 @permission_required("order.manage_orders")
 def fulfillment_packing_slips(request, order_pk, fulfillment_pk):
     orders = Order.objects.confirmed().prefetch_related(
-        "user", "shipping_address", "billing_address"
+        "user", "address",
     )
     order = get_object_or_404(orders, pk=order_pk)
     fulfillments = order.fulfillments.prefetch_related("lines", "lines__order_line")

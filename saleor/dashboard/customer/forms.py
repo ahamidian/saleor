@@ -60,7 +60,7 @@ class CustomerForm(forms.ModelForm):
             self.fields["note"].disabled = True
             self.fields["is_active"].disabled = True
 
-        address = self.instance.default_billing_address
+        address = self.instance.tak_address
         if not address:
             return
         if address.first_name:

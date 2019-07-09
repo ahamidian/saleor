@@ -191,8 +191,8 @@ TEMPLATES = [
     }
 ]
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = '_!gk+z0s9focnf8y=#sruob2h6@$i@@*rw@%7^v@w@k0ovz+yr'
+
 
 MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",

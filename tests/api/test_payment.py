@@ -122,7 +122,7 @@ def test_checkout_add_payment(
     assert payment.charge_status == ChargeStatus.NOT_CHARGED
 
 
-def test_use_checkout_billing_address_as_payment_billing(
+def test_use_checkout_address_as_payment_billing(
     user_api_client, checkout_with_item, address
 ):
     checkout = checkout_with_item
@@ -147,7 +147,7 @@ def test_use_checkout_billing_address_as_payment_billing(
     # assign the address and try again
     address.street_address_1 = "spanish-inqusition"
     address.save()
-    checkout.billing_address = address
+    checkout.address = address
     checkout.save()
     response = user_api_client.post_graphql(CREATE_QUERY, variables)
     get_graphql_content(response)
@@ -155,7 +155,7 @@ def test_use_checkout_billing_address_as_payment_billing(
     checkout.refresh_from_db()
     assert checkout.payments.count() == 1
     payment = checkout.payments.first()
-    assert payment.billing_address_1 == address.street_address_1
+    assert payment.address_1 == address.street_address_1
 
 
 CAPTURE_QUERY = """
@@ -395,8 +395,8 @@ def test_payments_query(
         "cityArea": pay.billing_city_area,
         "countryArea": pay.billing_country_area,
         "companyName": pay.billing_company_name,
-        "streetAddress1": pay.billing_address_1,
-        "streetAddress2": pay.billing_address_2,
+        "streetAddress1": pay.address_1,
+        "streetAddress2": pay.address_2,
         "postalCode": pay.billing_postal_code,
         "country": {
             "code": pay.billing_country_code,

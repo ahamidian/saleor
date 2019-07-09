@@ -59,10 +59,10 @@ def filter_search(qs, _, value):
         "email",
         "first_name",
         "last_name",
-        "default_shipping_address__first_name",
-        "default_shipping_address__last_name",
-        "default_shipping_address__city",
-        "default_shipping_address__country",
+        "tak_address__first_name",
+        "tak_address__last_name",
+        "tak_address__city",
+        "tak_address__country",
     )
     if value:
         qs = filter_by_query_param(qs, value, search_fields)

@@ -200,8 +200,7 @@ def customer_user(address):  # pylint: disable=W0613
     user = User.objects.create_user(
         "test@example.com",
         "password",
-        default_billing_address=default_address,
-        default_shipping_address=default_address,
+        tak_address=default_address
     )
     user.addresses.add(default_address)
     return user
@@ -232,9 +231,9 @@ def request_checkout_with_item(product, request_checkout):
 
 @pytest.fixture
 def order(customer_user):
-    address = customer_user.default_billing_address.get_copy()
+    address = customer_user.tak_address.get_copy()
     return Order.objects.create(
-        billing_address=address, user_email=customer_user.email, user=customer_user
+        address=address, user_email=customer_user.email, user=customer_user
     )
 
 
@@ -586,9 +585,9 @@ def product_list_published(product_list):
 
 @pytest.fixture
 def order_list(customer_user):
-    address = customer_user.default_billing_address.get_copy()
+    address = customer_user.tak_address.get_copy()
     data = {
-        "billing_address": address,
+        "address": address,
         "user": customer_user,
         "user_email": customer_user.email,
     }
@@ -789,7 +788,7 @@ def order_with_lines(order, product_type, category, shipping_zone):
         tax_rate=23,
     )
 
-    order.shipping_address = order.billing_address.get_copy()
+    order.address = order.address.get_copy()
     method = shipping_zone.shipping_methods.get()
     order.shipping_method_name = method.name
     order.shipping_method = method
@@ -1172,15 +1171,15 @@ def payment_dummy(db, settings, order_with_lines):
         cc_exp_year=2027,
         total=order_with_lines.total.gross.amount,
         currency=order_with_lines.total.gross.currency,
-        billing_first_name=order_with_lines.billing_address.first_name,
-        billing_last_name=order_with_lines.billing_address.last_name,
-        billing_company_name=order_with_lines.billing_address.company_name,
-        billing_address_1=order_with_lines.billing_address.street_address_1,
-        billing_address_2=order_with_lines.billing_address.street_address_2,
-        billing_city=order_with_lines.billing_address.city,
-        billing_postal_code=order_with_lines.billing_address.postal_code,
-        billing_country_code=order_with_lines.billing_address.country.code,
-        billing_country_area=order_with_lines.billing_address.country_area,
+        billing_first_name=order_with_lines.address.first_name,
+        billing_last_name=order_with_lines.address.last_name,
+        billing_company_name=order_with_lines.address.company_name,
+        address_1=order_with_lines.address.street_address_1,
+        address_2=order_with_lines.address.street_address_2,
+        billing_city=order_with_lines.address.city,
+        billing_postal_code=order_with_lines.address.postal_code,
+        billing_country_code=order_with_lines.address.country.code,
+        billing_country_area=order_with_lines.address.country_area,
         billing_email=order_with_lines.user_email,
     )
 

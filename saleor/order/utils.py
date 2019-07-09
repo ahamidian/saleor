@@ -94,7 +94,7 @@ def check_order_status(func):
     def decorator(*args, **kwargs):
         token = kwargs.pop("token")
         order = get_object_or_404(Order.objects.confirmed(), token=token)
-        if not order.billing_address or order.is_fully_paid():
+        if not order.address or order.is_fully_paid():
             return redirect("order:details", token=order.token)
         kwargs["order"] = order
         return func(*args, **kwargs)
@@ -247,9 +247,7 @@ def cancel_fulfillment(user, fulfillment, restock):
 def attach_order_to_user(order, user):
     """Associate existing order with user account."""
     order.user = user
-    store_user_address(user, order.billing_address, AddressType.BILLING)
-    if order.shipping_address:
-        store_user_address(user, order.shipping_address, AddressType.SHIPPING)
+    store_user_address(user, order.address, AddressType.BILLING)
     order.save(update_fields=["user"])
 
 

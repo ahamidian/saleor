@@ -43,8 +43,8 @@ class PaymentInput(graphene.InputObjectType):
             "the checkout total will be used."
         ),
     )
-    billing_address = AddressInput(
-        description="""Billing address. If empty, the billing address associated with
+    address = AddressInput(
+        description="""Address. If empty, the address associated with
             the checkout instance will be used."""
     )
 
@@ -72,12 +72,12 @@ class CheckoutPaymentCreate(BaseMutation, I18nMixin):
         ).get(pk=checkout_id)
 
         data = data.get("input")
-        billing_address = checkout.billing_address
-        if "billing_address" in data:
-            billing_address = cls.validate_address(data["billing_address"])
-        if billing_address is None:
+        address = checkout.address
+        if "address" in data:
+            address = cls.validate_address(data["address"])
+        if address is None:
             raise ValidationError(
-                {"billing_address": "No billing address associated with this checkout."}
+                {"address": "No address associated with this checkout."}
             )
         checkout_total = (
             calculate_checkout_total(checkout, discounts=info.context.discounts)
@@ -101,7 +101,7 @@ class CheckoutPaymentCreate(BaseMutation, I18nMixin):
             total=amount,
             currency=settings.DEFAULT_CURRENCY,
             email=checkout.email,
-            billing_address=billing_address,
+            address=address,
             extra_data=extra_data,
             customer_ip_address=get_client_ip(info.context),
             checkout=checkout,

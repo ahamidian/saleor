@@ -45,13 +45,13 @@ def test_ajax_order_shipping_methods_list(admin_client, order, shipping_zone):
 def test_ajax_order_shipping_methods_list_different_country(
     admin_client, order, settings, shipping_zone
 ):
-    order.shipping_address = order.billing_address.get_copy()
+    order.address = order.address.get_copy()
     order.save()
     method = shipping_zone.shipping_methods.get()
     shipping_methods_list = [{"id": method.pk, "text": method.get_ajax_label()}]
     # If shipping zone does not cover order's country,
     # then its shipping methods should not be included
-    assert order.shipping_address.country.code != "DE"
+    assert order.address.country.code != "DE"
     zone = ShippingZone.objects.create(name="Shipping zone", countries=["DE"])
     zone.shipping_methods.create(price=Money(15, settings.DEFAULT_CURRENCY), name="DHL")
 
@@ -696,8 +696,7 @@ def test_view_order_customer_edit_to_existing_user(
     draft_order.refresh_from_db()
     assert draft_order.user == customer_user
     assert not draft_order.user_email
-    assert draft_order.billing_address == customer_user.default_billing_address
-    assert draft_order.shipping_address == customer_user.default_shipping_address
+    assert draft_order.address == customer_user.tak_address
     redirect_url = reverse(
         "dashboard:order-details", kwargs={"order_pk": draft_order.pk}
     )
@@ -775,8 +774,7 @@ def test_view_order_customer_remove(admin_client, draft_order):
     draft_order.refresh_from_db()
     assert not draft_order.user
     assert not draft_order.user_email
-    assert not draft_order.billing_address
-    assert not draft_order.shipping_address
+    assert not draft_order.address
 
 
 def test_view_order_shipping_edit(admin_client, draft_order, shipping_zone, settings):
@@ -904,28 +902,26 @@ def test_view_edit_discount(admin_client, draft_order, settings):
 
 def test_update_order_with_user_addresses(order):
     update_order_with_user_addresses(order)
-    assert order.billing_address == order.user.default_billing_address
-    assert order.shipping_address == order.user.default_shipping_address
+    assert order.address == order.user.tak_address
 
 
 def test_update_order_with_user_addresses_empty_user(order):
     order.user = None
     order.save()
     update_order_with_user_addresses(order)
-    assert order.billing_address is None
-    assert order.shipping_address is None
+    assert order.address is None
 
 
 def test_save_address_in_order_shipping_address(order, address):
-    old_billing_address = order.billing_address
+    old_address = order.address
     address.first_name = "Jane"
     address.save()
 
     save_address_in_order(order, address, AddressType.SHIPPING)
 
-    assert order.shipping_address == address
-    assert order.shipping_address.pk == address.pk
-    assert order.billing_address == old_billing_address
+    assert order.address == address
+    assert order.address.pk == address.pk
+
 
 
 def test_save_address_in_order_billing_address(order, address):
@@ -934,9 +930,8 @@ def test_save_address_in_order_billing_address(order, address):
 
     save_address_in_order(order, address, AddressType.BILLING)
 
-    assert order.billing_address == address
-    assert order.billing_address.pk == address.pk
-    assert order.shipping_address == order.billing_address
+    assert order.address == address
+    assert order.address.pk == address.pk
 
 
 def test_remove_customer_from_order(order):
@@ -944,40 +939,17 @@ def test_remove_customer_from_order(order):
 
     assert order.user is None
     assert order.user_email == ""
-    assert order.billing_address is None
+    assert order.address is None
 
 
 def test_remove_customer_from_order_remove_addresses(order, customer_user):
-    order.billing_address = customer_user.default_billing_address.get_copy()
-    order.shipping_address = customer_user.default_shipping_address.get_copy()
+    order.address = customer_user.tak_address.get_copy()
 
     remove_customer_from_order(order)
 
     assert order.user is None
     assert order.user_email == ""
-    assert order.billing_address is None
-    assert order.shipping_address is None
-
-
-def test_remove_customer_from_order_do_not_remove_modified_addresses(
-    order, customer_user
-):
-    order.billing_address = customer_user.default_billing_address.get_copy()
-    order.billing_address.first_name = "Jane"
-    order.billing_address.save()
-    old_billing_address = order.billing_address
-
-    order.shipping_address = customer_user.default_shipping_address.get_copy()
-    order.shipping_address.first_name = "Jane"
-    order.shipping_address.save()
-    old_shipping_address = order.shipping_address
-
-    remove_customer_from_order(order)
-
-    assert order.user is None
-    assert order.user_email == ""
-    assert order.billing_address == old_billing_address
-    assert order.shipping_address == old_shipping_address
+    assert order.address is None
 
 
 def test_view_order_voucher_edit(admin_client, draft_order, settings, voucher):

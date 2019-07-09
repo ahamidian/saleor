@@ -56,24 +56,20 @@ def get_gateway_operation_func(gateway, operation_type):
 
 
 def create_payment_information(
-    payment: Payment,
-    payment_token: str = None,
-    amount: Decimal = None,
-    billing_address: AddressData = None,
-    shipping_address: AddressData = None,
+        payment: Payment,
+        payment_token: str = None,
+        amount: Decimal = None,
+        address: AddressData = None,
 ) -> PaymentData:
     """Extracts order information along with payment details.
 
     Returns information required to process payment and additional
     billing/shipping addresses for optional fraud-prevention mechanisms.
     """
-    billing, shipping = None, None
+    billing = None
 
-    if billing_address is None and payment.order.billing_address:
-        billing = AddressData(**payment.order.billing_address.as_data())
-
-    if shipping_address is None and payment.order.shipping_address:
-        shipping = AddressData(**payment.order.shipping_address.as_data())
+    if address is None and payment.order.address:
+        billing = AddressData(**payment.order.address.as_data())
 
     order_id = payment.order.pk if payment.order else None
 
@@ -82,7 +78,6 @@ def create_payment_information(
         amount=amount or payment.total,
         currency=payment.currency,
         billing=billing,
-        shipping=shipping,
         order_id=order_id,
         customer_ip_address=payment.customer_ip_address,
         customer_email=payment.billing_email,
@@ -124,16 +119,16 @@ def require_active_payment(view):
 
 
 def create_payment(
-    gateway: str,
-    total: Decimal,
-    currency: str,
-    email: str,
-    billing_address: Address,
-    customer_ip_address: str = "",
-    payment_token: str = "",
-    extra_data: Dict = None,
-    checkout: Checkout = None,
-    order: Order = None,
+        gateway: str,
+        total: Decimal,
+        currency: str,
+        email: str,
+        address: Address,
+        customer_ip_address: str = "",
+        payment_token: str = "",
+        extra_data: Dict = None,
+        checkout: Checkout = None,
+        order: Order = None,
 ) -> Payment:
     """Create a payment instance.
 
@@ -142,15 +137,15 @@ def create_payment(
     """
     defaults = {
         "billing_email": email,
-        "billing_first_name": billing_address.first_name,
-        "billing_last_name": billing_address.last_name,
-        "billing_company_name": billing_address.company_name,
-        "billing_address_1": billing_address.street_address_1,
-        "billing_address_2": billing_address.street_address_2,
-        "billing_city": billing_address.city,
-        "billing_postal_code": billing_address.postal_code,
-        "billing_country_code": billing_address.country.code,
-        "billing_country_area": billing_address.country_area,
+        "billing_first_name": address.first_name,
+        "billing_last_name": address.last_name,
+        "billing_company_name": address.company_name,
+        "address_1": address.street_address_1,
+        "address_2": address.street_address_2,
+        "billing_city": address.city,
+        "billing_postal_code": address.postal_code,
+        "billing_country_code": address.country.code,
+        "billing_country_area": address.country_area,
         "currency": currency,
         "gateway": gateway,
         "total": total,
@@ -187,7 +182,7 @@ def mark_order_as_paid(order: Order, request_user: User):
         payment_token="",
         currency=order.total.gross.currency,
         email=order.user_email,
-        billing_address=order.billing_address,
+        address=order.address,
         total=order.total.gross.amount,
         order=order,
     )
@@ -198,11 +193,11 @@ def mark_order_as_paid(order: Order, request_user: User):
 
 
 def create_transaction(
-    payment: Payment,
-    kind: str,
-    payment_information: PaymentData,
-    gateway_response: GatewayResponse = None,
-    error_msg=None,
+        payment: Payment,
+        kind: str,
+        payment_information: PaymentData,
+        gateway_response: GatewayResponse = None,
+        error_msg=None,
 ) -> Transaction:
     """Create a transaction based on transaction kind and gateway response."""
 
@@ -388,7 +383,7 @@ def _gateway_postprocess(transaction, payment):
 
 @require_active_payment
 def gateway_process_payment(
-    payment: Payment, payment_token: str, **extras
+        payment: Payment, payment_token: str, **extras
 ) -> Transaction:
     """Performs whole payment process on a gateway."""
     transaction = call_gateway(

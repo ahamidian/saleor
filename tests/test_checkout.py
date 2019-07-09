@@ -16,8 +16,7 @@ from saleor.checkout.forms import CheckoutVoucherForm, CountryForm
 from saleor.checkout.utils import (
     add_variant_to_checkout,
     add_voucher_to_checkout,
-    change_billing_address_in_checkout,
-    change_shipping_address_in_checkout,
+    change_address_in_checkout,
     clear_shipping_method,
     create_order,
     get_checkout_context,
@@ -175,7 +174,7 @@ def test_view_checkout_shipping_address_authorized_user(
     request_checkout_with_item.user = customer_user
     request_checkout_with_item.save()
     url = reverse("checkout:shipping-address")
-    data = {"address": customer_user.default_billing_address.pk}
+    data = {"address": customer_user.tak_address.pk}
 
     response = authorized_client.post(url, data, follow=True)
 
@@ -614,8 +613,7 @@ def test_create_order_creates_expected_events(
 
     # Prepare valid checkout
     checkout.user = checkout_user
-    checkout.billing_address = customer_user.default_billing_address
-    checkout.shipping_address = customer_user.default_shipping_address
+    checkout.address = customer_user.tak_address
     checkout.shipping_method = shipping_method
     checkout.save()
 
@@ -668,8 +666,7 @@ def test_create_order_insufficient_stock(
     variant = product_without_shipping.variants.get()
     add_variant_to_checkout(request_checkout, variant, 10, check_quantity=False)
     request_checkout.user = customer_user
-    request_checkout.billing_address = customer_user.default_billing_address
-    request_checkout.shipping_address = customer_user.default_billing_address
+    request_checkout.address = customer_user.tak_address
     request_checkout.save()
 
     with pytest.raises(InsufficientStock):
@@ -683,8 +680,7 @@ def test_create_order_doesnt_duplicate_order(
 ):
     checkout = checkout_with_item
     checkout.user = customer_user
-    checkout.billing_address = customer_user.default_billing_address
-    checkout.shipping_address = customer_user.default_billing_address
+    checkout.address = customer_user.tak_address
     checkout.shipping_method = shipping_method
     checkout.save()
 
@@ -704,8 +700,7 @@ def test_create_order_with_gift_card(
     checkout_user = None if is_anonymous_user else customer_user
     checkout = checkout_with_gift_card
     checkout.user = checkout_user
-    checkout.billing_address = customer_user.default_billing_address
-    checkout.shipping_address = customer_user.default_billing_address
+    checkout.address = customer_user.tak_address
     checkout.shipping_method = shipping_method
     checkout.save()
 
@@ -736,8 +731,7 @@ def test_create_order_with_gift_card_partial_use(
 ):
     checkout = checkout_with_item
     checkout.user = customer_user
-    checkout.billing_address = customer_user.default_billing_address
-    checkout.shipping_address = customer_user.default_billing_address
+    checkout.address = customer_user.tak_address
     checkout.shipping_method = shipping_method
     checkout.save()
 
@@ -774,8 +768,7 @@ def test_create_order_with_many_gift_cards(
 ):
     checkout = checkout_with_item
     checkout.user = customer_user
-    checkout.billing_address = customer_user.default_billing_address
-    checkout.shipping_address = customer_user.default_billing_address
+    checkout.address = customer_user.tak_address
     checkout.shipping_method = shipping_method
     checkout.save()
 
@@ -1262,55 +1255,43 @@ def test_get_checkout_context(checkout_with_voucher):
 
 
 def test_change_address_in_checkout(checkout, address):
-    change_shipping_address_in_checkout(checkout, address)
-    change_billing_address_in_checkout(checkout, address)
+    change_address_in_checkout(checkout, address)
 
     checkout.refresh_from_db()
-    assert checkout.shipping_address == address
-    assert checkout.billing_address == address
+    assert checkout.address == address
 
 
 def test_change_address_in_checkout_to_none(checkout, address):
-    checkout.shipping_address = address
-    checkout.billing_address = address.get_copy()
+    checkout.address = address
     checkout.save()
 
-    change_shipping_address_in_checkout(checkout, None)
-    change_billing_address_in_checkout(checkout, None)
+    change_address_in_checkout(checkout, None)
 
     checkout.refresh_from_db()
-    assert checkout.shipping_address is None
-    assert checkout.billing_address is None
+    assert checkout.address is None
 
 
 def test_change_address_in_checkout_to_same(checkout, address):
-    checkout.shipping_address = address
-    checkout.billing_address = address.get_copy()
-    checkout.save(update_fields=["shipping_address", "billing_address"])
-    shipping_address_id = checkout.shipping_address.id
-    billing_address_id = checkout.billing_address.id
+    checkout.address = address
+    checkout.save(update_fields=["address"])
+    address_id = checkout.address.id
 
-    change_shipping_address_in_checkout(checkout, address)
-    change_billing_address_in_checkout(checkout, address)
+    change_address_in_checkout(checkout, address)
 
     checkout.refresh_from_db()
-    assert checkout.shipping_address.id == shipping_address_id
-    assert checkout.billing_address.id == billing_address_id
+    assert checkout.address.id == address_id
 
 
 def test_change_address_in_checkout_to_other(checkout, address):
     address_id = address.id
-    checkout.shipping_address = address
-    checkout.billing_address = address.get_copy()
-    checkout.save(update_fields=["shipping_address", "billing_address"])
+    checkout.address = address
+    checkout.save(update_fields=["address"])
     other_address = Address.objects.create(country=Country("DE"))
 
-    change_shipping_address_in_checkout(checkout, other_address)
-    change_billing_address_in_checkout(checkout, other_address)
+    change_address_in_checkout(checkout, other_address)
 
     checkout.refresh_from_db()
-    assert checkout.shipping_address == other_address
-    assert checkout.billing_address == other_address
+    assert checkout.address == other_address
     assert not Address.objects.filter(id=address_id).exists()
 
 
@@ -1319,17 +1300,14 @@ def test_change_address_in_checkout_from_user_address_to_other(
 ):
     address_id = address.id
     checkout.user = customer_user
-    checkout.shipping_address = address
-    checkout.billing_address = address.get_copy()
-    checkout.save(update_fields=["shipping_address", "billing_address"])
+    checkout.address = address
+    checkout.save(update_fields=["address"])
     other_address = Address.objects.create(country=Country("DE"))
 
-    change_shipping_address_in_checkout(checkout, other_address)
-    change_billing_address_in_checkout(checkout, other_address)
+    change_address_in_checkout(checkout, other_address)
 
     checkout.refresh_from_db()
-    assert checkout.shipping_address == other_address
-    assert checkout.billing_address == other_address
+    assert checkout.address == other_address
     assert Address.objects.filter(id=address_id).exists()
 
 

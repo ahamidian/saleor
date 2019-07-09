@@ -142,11 +142,11 @@ def test_token_create_user_data(permission_manage_orders, staff_api_client, staf
 
 
 def test_query_user(
-    staff_api_client, customer_user, address, permission_manage_users, media_root
+        staff_api_client, customer_user, address, permission_manage_users, media_root
 ):
     user = customer_user
-    user.default_shipping_address.country = "US"
-    user.default_shipping_address.save()
+    user.tak_address.country = "US"
+    user.tak_address.save()
     user.addresses.add(address.get_copy())
 
     avatar_mock = MagicMock(spec=File)
@@ -230,17 +230,17 @@ def test_query_user(
     for address in data["addresses"]:
         if address["isDefaultShippingAddress"]:
             address_id = graphene.Node.to_global_id(
-                "Address", user.default_shipping_address.id
+                "Address", user.tak_address.id
             )
             assert address["id"] == address_id
         if address["isDefaultBillingAddress"]:
             address_id = graphene.Node.to_global_id(
-                "Address", user.default_billing_address.id
+                "Address", user.tak_address.id
             )
             assert address["id"] == address_id
 
     address = data["defaultShippingAddress"]
-    user_address = user.default_shipping_address
+    user_address = user.tak_address
     assert address["firstName"] == user_address.first_name
     assert address["lastName"] == user_address.last_name
     assert address["companyName"] == user_address.company_name
@@ -256,7 +256,7 @@ def test_query_user(
     assert address["isDefaultBillingAddress"] is None
 
     address = data["defaultBillingAddress"]
-    user_address = user.default_billing_address
+    user_address = user.tak_address
     assert address["firstName"] == user_address.first_name
     assert address["lastName"] == user_address.last_name
     assert address["companyName"] == user_address.company_name
@@ -322,7 +322,7 @@ def test_query_customers(staff_api_client, user_api_client, permission_manage_us
 
 
 def test_query_staff(
-    staff_api_client, user_api_client, staff_user, admin_user, permission_manage_staff
+        staff_api_client, user_api_client, staff_user, admin_user, permission_manage_staff
 ):
     query = """
     {
@@ -353,7 +353,7 @@ def test_query_staff(
 
 
 def test_who_can_see_user(
-    staff_user, customer_user, staff_api_client, permission_manage_users
+        staff_user, customer_user, staff_api_client, permission_manage_users
 ):
     query = """
     query Users {
@@ -409,7 +409,7 @@ def test_me_query_anonymous_client(api_client):
 
 
 def test_me_query_customer_can_not_see_note(
-    staff_user, staff_api_client, permission_manage_users
+        staff_user, staff_api_client, permission_manage_users
 ):
     query = """
     query Me {
@@ -446,7 +446,7 @@ def test_me_query_checkout(user_api_client, checkout):
 
 
 def test_me_with_cancelled_fulfillments(
-    user_api_client, fulfilled_order_with_cancelled_fulfillment
+        user_api_client, fulfilled_order_with_cancelled_fulfillment
 ):
     query = """
     query Me {
@@ -478,10 +478,10 @@ def test_me_with_cancelled_fulfillments(
 
 
 def test_user_with_cancelled_fulfillments(
-    staff_api_client,
-    customer_user,
-    permission_manage_users,
-    fulfilled_order_with_cancelled_fulfillment,
+        staff_api_client,
+        customer_user,
+        permission_manage_users,
+        fulfilled_order_with_cancelled_fulfillment,
 ):
     query = """
     query User($id: ID!) {
@@ -552,10 +552,10 @@ def test_customer_register(user_api_client):
 
 @patch("saleor.dashboard.emails.send_set_password_customer_email.delay")
 def test_customer_create(
-    send_set_password_customer_email_mock,
-    staff_api_client,
-    address,
-    permission_manage_users,
+        send_set_password_customer_email_mock,
+        staff_api_client,
+        address,
+        permission_manage_users,
 ):
     query = """
     mutation CreateCustomer(
@@ -617,13 +617,9 @@ def test_customer_create(
     User = get_user_model()
     new_customer = User.objects.get(email=email)
 
-    shipping_address, billing_address = (
-        new_customer.default_shipping_address,
-        new_customer.default_billing_address,
-    )
-    assert shipping_address == address
-    assert billing_address == address
-    assert shipping_address.pk != billing_address.pk
+    address = new_customer.tak_address
+    assert address == address
+    assert address.pk != address.pk
 
     data = content["data"]["customerCreate"]
     assert data["errors"] == []
@@ -645,7 +641,7 @@ def test_customer_create(
 
 
 def test_customer_update(
-    staff_api_client, staff_user, customer_user, address, permission_manage_users
+        staff_api_client, staff_user, customer_user, address, permission_manage_users
 ):
     query = """
     mutation UpdateCustomer(
@@ -683,10 +679,8 @@ def test_customer_update(
 
     # this test requires addresses to be set and checks whether new address
     # instances weren't created, but the existing ones got updated
-    assert customer_user.default_billing_address
-    assert customer_user.default_shipping_address
-    billing_address_pk = customer_user.default_billing_address.pk
-    shipping_address_pk = customer_user.default_shipping_address.pk
+    assert customer_user.tak_address
+    address_pk = customer_user.tak_address.pk
 
     user_id = graphene.Node.to_global_id("User", customer_user.id)
     first_name = "new_first_name"
@@ -715,15 +709,10 @@ def test_customer_update(
     customer = User.objects.get(email=customer_user.email)
 
     # check that existing instances are updated
-    shipping_address, billing_address = (
-        customer.default_shipping_address,
-        customer.default_billing_address,
-    )
-    assert billing_address.pk == billing_address_pk
-    assert shipping_address.pk == shipping_address_pk
+    address = customer.tak_address
+    assert address.pk == address_pk
 
-    assert billing_address.street_address_1 == new_street_address
-    assert shipping_address.street_address_1 == new_street_address
+    assert address.street_address_1 == new_street_address
 
     data = content["data"]["customerUpdate"]
     assert data["errors"] == []
@@ -740,7 +729,7 @@ def test_customer_update(
 
 
 def test_customer_update_generates_event_when_changing_email(
-    staff_api_client, staff_user, customer_user, address, permission_manage_users
+        staff_api_client, staff_user, customer_user, address, permission_manage_users
 ):
     query = """
     mutation UpdateCustomer(
@@ -782,7 +771,7 @@ def test_customer_update_generates_event_when_changing_email(
 
 
 def test_customer_update_without_any_changes_generates_no_event(
-    staff_api_client, customer_user, address, permission_manage_users
+        staff_api_client, customer_user, address, permission_manage_users
 ):
     query = """
     mutation UpdateCustomer(
@@ -851,10 +840,10 @@ def test_logged_customer_update(user_api_client, graphql_address_data):
     # instances weren't created, but the existing ones got updated
     user = user_api_client.user
     new_first_name = graphql_address_data["firstName"]
-    assert user.default_billing_address
-    assert user.default_shipping_address
-    assert user.default_billing_address.first_name != new_first_name
-    assert user.default_shipping_address.first_name != new_first_name
+    assert user.tak_address
+    assert user.tak_address
+    assert user.tak_address.first_name != new_first_name
+    assert user.tak_address.first_name != new_first_name
     variables = {"billing": graphql_address_data, "shipping": graphql_address_data}
     response = user_api_client.post_graphql(UPDATE_LOGGED_CUSTOMER_QUERY, variables)
     content = get_graphql_content(response)
@@ -862,14 +851,12 @@ def test_logged_customer_update(user_api_client, graphql_address_data):
     assert not data["errors"]
 
     # check that existing instances are updated
-    billing_address_pk = user.default_billing_address.pk
-    shipping_address_pk = user.default_shipping_address.pk
+    address_pk = user.tak_address.pk
     user = User.objects.get(email=user.email)
-    assert user.default_billing_address.pk == billing_address_pk
-    assert user.default_shipping_address.pk == shipping_address_pk
+    assert user.tak_address.pk == address_pk
 
-    assert user.default_billing_address.first_name == new_first_name
-    assert user.default_shipping_address.first_name == new_first_name
+    assert user.tak_address.first_name == new_first_name
+    assert user.tak_address.first_name == new_first_name
 
 
 def test_logged_customer_update_anonymous_user(api_client):
@@ -881,11 +868,11 @@ def test_logged_customer_update_anonymous_user(api_client):
     "saleor.graphql.account.utils.account_events.staff_user_deleted_a_customer_event"
 )
 def test_customer_delete(
-    mocked_deletion_event,
-    staff_api_client,
-    staff_user,
-    customer_user,
-    permission_manage_users,
+        mocked_deletion_event,
+        staff_api_client,
+        staff_user,
+        customer_user,
+        permission_manage_users,
 ):
     """Ensure deleting a customer actually deletes the customer and creates proper
     related events"""
@@ -934,10 +921,10 @@ def test_customer_delete_errors(customer_user, admin_user, staff_user):
 
 @patch("saleor.dashboard.emails.send_set_password_staff_email.delay")
 def test_staff_create(
-    send_set_password_staff_email_mock,
-    staff_api_client,
-    media_root,
-    permission_manage_staff,
+        send_set_password_staff_email_mock,
+        staff_api_client,
+        media_root,
+        permission_manage_staff,
 ):
     query = """
     mutation CreateStaff(
@@ -1146,7 +1133,7 @@ def test_set_password(user_api_client, customer_user):
 
 @patch("saleor.account.emails.send_password_reset_email.delay")
 def test_password_reset_email(
-    send_password_reset_mock, staff_api_client, customer_user, permission_manage_users
+        send_password_reset_mock, staff_api_client, customer_user, permission_manage_users
 ):
     query = """
     mutation ResetPassword($email: String!) {
@@ -1178,7 +1165,7 @@ def test_password_reset_email(
 
 @patch("saleor.account.emails.send_password_reset_email.delay")
 def test_password_reset_email_non_existing_user(
-    send_password_reset_mock, staff_api_client, permission_manage_users
+        send_password_reset_mock, staff_api_client, permission_manage_users
 ):
     query = """
     mutation ResetPassword($email: String!) {
@@ -1204,7 +1191,7 @@ def test_password_reset_email_non_existing_user(
 
 
 def test_create_address_mutation(
-    staff_api_client, customer_user, permission_manage_users
+        staff_api_client, customer_user, permission_manage_users
 ):
     query = """
     mutation CreateUserAddress($user: ID!, $city: String!, $country: String!) {
@@ -1256,7 +1243,7 @@ ADDRESS_UPDATE_MUTATION = """
 
 
 def test_address_update_mutation(
-    staff_api_client, customer_user, permission_manage_users, graphql_address_data
+        staff_api_client, customer_user, permission_manage_users, graphql_address_data
 ):
     query = ADDRESS_UPDATE_MUTATION
     address_obj = customer_user.addresses.first()
@@ -1276,7 +1263,7 @@ def test_address_update_mutation(
 
 
 def test_customer_update_own_address(
-    user_api_client, customer_user, graphql_address_data
+        user_api_client, customer_user, graphql_address_data
 ):
     query = ADDRESS_UPDATE_MUTATION
     address_obj = customer_user.addresses.first()
@@ -1297,7 +1284,7 @@ def test_customer_update_own_address(
 
 
 def test_customer_update_address_for_other(
-    user_api_client, customer_user, address_other_country, graphql_address_data
+        user_api_client, customer_user, address_other_country, graphql_address_data
 ):
     query = ADDRESS_UPDATE_MUTATION
     address_obj = address_other_country
@@ -1327,7 +1314,7 @@ ADDRESS_DELETE_MUTATION = """
 
 
 def test_address_delete_mutation(
-    staff_api_client, customer_user, permission_manage_users
+        staff_api_client, customer_user, permission_manage_users
 ):
     query = ADDRESS_DELETE_MUTATION
     address_obj = customer_user.addresses.first()
@@ -1356,7 +1343,7 @@ def test_customer_delete_own_address(user_api_client, customer_user):
 
 
 def test_customer_delete_address_for_other(
-    user_api_client, customer_user, address_other_country
+        user_api_client, customer_user, address_other_country
 ):
     query = ADDRESS_DELETE_MUTATION
     address_obj = address_other_country
@@ -1388,10 +1375,10 @@ mutation($address_id: ID!, $user_id: ID!, $type: AddressTypeEnum!) {
 
 
 def test_set_default_address(
-    staff_api_client, address_other_country, customer_user, permission_manage_users
+        staff_api_client, address_other_country, customer_user, permission_manage_users
 ):
-    customer_user.default_billing_address = None
-    customer_user.default_shipping_address = None
+    customer_user.tak_address = None
+    customer_user.tak_address = None
     customer_user.save()
 
     # try to set an address that doesn't belong to that user
@@ -1451,7 +1438,7 @@ def test_address_validator(user_api_client):
 
 
 def test_address_validator_uses_geip_when_country_code_missing(
-    user_api_client, monkeypatch
+        user_api_client, monkeypatch
 ):
     query = """
     query getValidator(
@@ -1530,7 +1517,7 @@ def test_address_validator_with_country_area(user_api_client):
 
 @patch("saleor.account.emails.send_password_reset_email.delay")
 def test_customer_reset_password(
-    send_password_reset_mock, user_api_client, customer_user
+        send_password_reset_mock, user_api_client, customer_user
 ):
     query = """
         mutation CustomerPasswordReset($email: String!) {
@@ -1597,7 +1584,7 @@ def test_customer_create_default_address(user_api_client, graphql_address_data):
 
     user.refresh_from_db()
     assert user.addresses.count() == nr_of_addresses + 1
-    assert user.default_shipping_address.id == int(
+    assert user.tak_address.id == int(
         graphene.Node.from_global_id(data["address"]["id"])[1]
     )
 
@@ -1610,7 +1597,7 @@ def test_customer_create_default_address(user_api_client, graphql_address_data):
 
     user.refresh_from_db()
     assert user.addresses.count() == nr_of_addresses + 2
-    assert user.default_billing_address.id == int(
+    assert user.tak_address.id == int(
         graphene.Node.from_global_id(data["address"]["id"])[1]
     )
 
@@ -1636,11 +1623,11 @@ mutation($id: ID!, $type: AddressTypeEnum!) {
 
 def test_customer_set_address_as_default(user_api_client, address):
     user = user_api_client.user
-    user.default_billing_address = None
-    user.default_shipping_address = None
+    user.tak_address = None
+    user.tak_address = None
     user.save()
-    assert not user.default_billing_address
-    assert not user.default_shipping_address
+    assert not user.tak_address
+    assert not user.tak_address
 
     assert address in user.addresses.all()
 
@@ -1655,7 +1642,7 @@ def test_customer_set_address_as_default(user_api_client, address):
     assert not data["errors"]
 
     user.refresh_from_db()
-    assert user.default_shipping_address == address
+    assert user.tak_address == address
 
     variables["type"] = AddressType.BILLING.upper()
     response = user_api_client.post_graphql(query, variables)
@@ -1664,18 +1651,18 @@ def test_customer_set_address_as_default(user_api_client, address):
     assert not data["errors"]
 
     user.refresh_from_db()
-    assert user.default_billing_address == address
+    assert user.tak_address == address
 
 
 def test_customer_change_default_address(user_api_client, address_other_country):
     user = user_api_client.user
-    assert user.default_billing_address
-    assert user.default_billing_address
-    address = user.default_shipping_address
+    assert user.tak_address
+    assert user.tak_address
+    address = user.tak_address
     assert address in user.addresses.all()
     assert address_other_country not in user.addresses.all()
 
-    user.default_shipping_address = address_other_country
+    user.tak_address = address_other_country
     user.save()
     user.refresh_from_db()
     assert address_other_country not in user.addresses.all()
@@ -1691,12 +1678,12 @@ def test_customer_change_default_address(user_api_client, address_other_country)
     assert not data["errors"]
 
     user.refresh_from_db()
-    assert user.default_shipping_address == address
+    assert user.tak_address == address
     assert address_other_country in user.addresses.all()
 
 
 def test_customer_change_default_address_invalid_address(
-    user_api_client, address_other_country
+        user_api_client, address_other_country
 ):
     user = user_api_client.user
     assert address_other_country not in user.addresses.all()
@@ -1837,12 +1824,12 @@ def test_user_avatar_delete_mutation(staff_api_client):
     ],
 )
 def test_query_customers_with_filter_placed_orders(
-    customer_filter,
-    count,
-    query_customer_with_filter,
-    staff_api_client,
-    permission_manage_users,
-    customer_user,
+        customer_filter,
+        count,
+        query_customer_with_filter,
+        staff_api_client,
+        permission_manage_users,
+        customer_user,
 ):
     Order.objects.create(user=customer_user)
     second_customer = User.objects.create(email="second_example@example.com")
@@ -1868,12 +1855,12 @@ def test_query_customers_with_filter_placed_orders(
     ],
 )
 def test_query_customers_with_filter_date_joined(
-    customer_filter,
-    count,
-    query_customer_with_filter,
-    staff_api_client,
-    permission_manage_users,
-    customer_user,
+        customer_filter,
+        count,
+        query_customer_with_filter,
+        staff_api_client,
+        permission_manage_users,
+        customer_user,
 ):
     with freeze_time("2012-01-14 11:00:00"):
         User.objects.create(email="second_example@example.com")
@@ -1897,12 +1884,12 @@ def test_query_customers_with_filter_date_joined(
     ],
 )
 def test_query_customers_with_filter_placed_orders_(
-    customer_filter,
-    count,
-    query_customer_with_filter,
-    staff_api_client,
-    permission_manage_users,
-    customer_user,
+        customer_filter,
+        count,
+        query_customer_with_filter,
+        staff_api_client,
+        permission_manage_users,
+        customer_user,
 ):
     Order.objects.bulk_create(
         [
@@ -1934,12 +1921,12 @@ def test_query_customers_with_filter_placed_orders_(
     ],
 )
 def test_query_customers_with_filter_placed_orders__(
-    customer_filter,
-    count,
-    query_customer_with_filter,
-    staff_api_client,
-    permission_manage_users,
-    customer_user,
+        customer_filter,
+        count,
+        query_customer_with_filter,
+        staff_api_client,
+        permission_manage_users,
+        customer_user,
 ):
     second_customer = User.objects.create(email="second_example@example.com")
     Order.objects.bulk_create(
@@ -1973,22 +1960,21 @@ def test_query_customers_with_filter_placed_orders__(
         ({"search": "example.com"}, 2),
         ({"search": "Alice"}, 1),
         ({"search": "Kowalski"}, 1),
-        ({"search": "John"}, 1),  # default_shipping_address__first_name
-        ({"search": "Doe"}, 1),  # default_shipping_address__last_name
-        ({"search": "wroc"}, 1),  # default_shipping_address__city
-        ({"search": "pl"}, 2),  # default_shipping_address__country, email
+        ({"search": "John"}, 1),  # tak_address__first_name
+        ({"search": "Doe"}, 1),  # tak_address__last_name
+        ({"search": "wroc"}, 1),  # tak_address__city
+        ({"search": "pl"}, 2),  # tak_address__country, email
     ],
 )
 def test_query_customer_memebers_with_filter_search(
-    customer_filter,
-    count,
-    query_customer_with_filter,
-    staff_api_client,
-    permission_manage_users,
-    address,
-    staff_user,
+        customer_filter,
+        count,
+        query_customer_with_filter,
+        staff_api_client,
+        permission_manage_users,
+        address,
+        staff_user,
 ):
-
     User.objects.bulk_create(
         [
             User(
@@ -2000,7 +1986,7 @@ def test_query_customer_memebers_with_filter_search(
             User(
                 email="third@example.com",
                 is_active=True,
-                default_shipping_address=address,
+                tak_address=address,
             ),
         ]
     )
@@ -2020,14 +2006,13 @@ def test_query_customer_memebers_with_filter_search(
     [({"status": "DEACTIVATED"}, 1), ({"status": "ACTIVE"}, 2)],
 )
 def test_query_staff_memebers_with_filter_status(
-    staff_member_filter,
-    count,
-    query_staff_users_with_filter,
-    staff_api_client,
-    permission_manage_staff,
-    staff_user,
+        staff_member_filter,
+        count,
+        query_staff_users_with_filter,
+        staff_api_client,
+        permission_manage_staff,
+        staff_user,
 ):
-
     User.objects.bulk_create(
         [
             User(email="second@example.com", is_staff=True, is_active=False),
@@ -2051,22 +2036,21 @@ def test_query_staff_memebers_with_filter_status(
         ({"search": "example.com"}, 3),
         ({"search": "Alice"}, 1),
         ({"search": "Kowalski"}, 1),
-        ({"search": "John"}, 1),  # default_shipping_address__first_name
-        ({"search": "Doe"}, 1),  # default_shipping_address__last_name
-        ({"search": "wroc"}, 1),  # default_shipping_address__city
-        ({"search": "pl"}, 3),  # default_shipping_address__country, email
+        ({"search": "John"}, 1),  # tak_address__first_name
+        ({"search": "Doe"}, 1),  # tak_address__last_name
+        ({"search": "wroc"}, 1),  # tak_address__city
+        ({"search": "pl"}, 3),  # tak_address__country, email
     ],
 )
 def test_query_staff_memebers_with_filter_search(
-    staff_member_filter,
-    count,
-    query_staff_users_with_filter,
-    staff_api_client,
-    permission_manage_staff,
-    address,
-    staff_user,
+        staff_member_filter,
+        count,
+        query_staff_users_with_filter,
+        staff_api_client,
+        permission_manage_staff,
+        address,
+        staff_user,
 ):
-
     User.objects.bulk_create(
         [
             User(
@@ -2080,7 +2064,7 @@ def test_query_staff_memebers_with_filter_search(
                 email="third@example.com",
                 is_staff=True,
                 is_active=True,
-                default_shipping_address=address,
+                tak_address=address,
             ),
             User(
                 email="customer@example.com",
@@ -2116,7 +2100,7 @@ USER_CHANGE_ACTIVE_STATUS_MUTATION = """
 
 
 def test_staff_bulk_set_active(
-    staff_api_client, user_list_not_active, permission_manage_users
+        staff_api_client, user_list_not_active, permission_manage_users
 ):
     users = user_list_not_active
     active_status = True
@@ -2137,7 +2121,7 @@ def test_staff_bulk_set_active(
 
 
 def test_staff_bulk_set_not_active(
-    staff_api_client, user_list, permission_manage_users
+        staff_api_client, user_list, permission_manage_users
 ):
     users = user_list
     active_status = False
@@ -2158,7 +2142,7 @@ def test_staff_bulk_set_not_active(
 
 
 def test_change_active_status_for_superuser(
-    staff_api_client, superuser, permission_manage_users
+        staff_api_client, superuser, permission_manage_users
 ):
     users = [superuser]
     superuser_id = graphene.Node.to_global_id("User", superuser.id)
@@ -2176,8 +2160,8 @@ def test_change_active_status_for_superuser(
     data = content["data"]["userBulkSetActive"]
     assert data["errors"][0]["field"] == superuser_id
     assert (
-        data["errors"][0]["message"] == "Cannot activate or deactivate "
-        "superuser's account."
+            data["errors"][0]["message"] == "Cannot activate or deactivate "
+                                            "superuser's account."
     )
 
 
@@ -2198,6 +2182,6 @@ def test_change_active_status_for_himself(staff_api_client, permission_manage_us
     data = content["data"]["userBulkSetActive"]
     assert data["errors"][0]["field"] == user_id
     assert (
-        data["errors"][0]["message"] == "Cannot activate or deactivate "
-        "your own account."
+            data["errors"][0]["message"] == "Cannot activate or deactivate "
+                                            "your own account."
     )

@@ -427,7 +427,7 @@ def test_order_payment_flow(
     request_checkout_with_item, client, address, customer_user, shipping_zone, settings
 ):
     request_checkout_with_item.shipping_address = address
-    request_checkout_with_item.billing_address = address.get_copy()
+    request_checkout_with_item.address = address.get_copy()
     request_checkout_with_item.email = "test@example.com"
     request_checkout_with_item.shipping_method = shipping_zone.shipping_methods.first()
     request_checkout_with_item.save()

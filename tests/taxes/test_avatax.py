@@ -183,7 +183,7 @@ def test_calculate_order_shipping(
 ):
     order = order_line.order
     method = shipping_zone.shipping_methods.get()
-    order.shipping_address = order.billing_address.get_copy()
+    order.address = order.address.get_copy()
     order.shipping_method_name = method.name
     order.shipping_method = method
     order.save()
@@ -207,7 +207,7 @@ def test_calculate_order_line_unit(
 
     order = order_line.order
     method = shipping_zone.shipping_methods.get()
-    order.shipping_address = order.billing_address.get_copy()
+    order.address = order.address.get_copy()
     order.shipping_method_name = method.name
     order.shipping_method = method
     order.save()

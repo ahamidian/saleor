@@ -52,7 +52,7 @@
               <tbody>
                 {% for user in staff %}
                   <tr data-action-go="{% url "dashboard:staff-details" pk=user.pk %}">
-                    {% with user.default_billing_address as default_address %}
+                    {% with user.tak_address as default_address %}
                       <td>
                         {% if user.get_full_name != user.email %}
                           {{ user.get_full_name }}

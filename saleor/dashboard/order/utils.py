@@ -55,27 +55,18 @@ def create_packing_slip_pdf(order, fulfillment, absolute_url):
 
 def update_order_with_user_addresses(order):
     """Update addresses in an order based on a user assigned to an order."""
-    if order.shipping_address:
-        order.shipping_address.delete()
-        order.shipping_address = None
-
-    if order.billing_address:
-        order.billing_address.delete()
-        order.billing_address = None
+    if order.address:
+        order.address.delete()
+        order.address = None
 
     if order.user:
-        order.billing_address = (
-            order.user.default_billing_address.get_copy()
-            if order.user.default_billing_address
-            else None
-        )
-        order.shipping_address = (
-            order.user.default_shipping_address.get_copy()
-            if order.user.default_shipping_address
+        order.address = (
+            order.user.tak_address.get_copy()
+            if order.user.tak_address
             else None
         )
 
-    order.save(update_fields=["billing_address", "shipping_address"])
+    order.save(update_fields=["address"])
 
 
 def get_prices_of_discounted_products(order, discounted_products):
@@ -158,10 +149,10 @@ def get_voucher_discount_for_order(order):
             order.voucher, subtotal.gross, order.shipping_price
         )
     if order.voucher.type in (
-        VoucherType.PRODUCT,
-        VoucherType.COLLECTION,
-        VoucherType.CATEGORY,
-        VoucherType.SPECIFIC_PRODUCT,
+            VoucherType.PRODUCT,
+            VoucherType.COLLECTION,
+            VoucherType.CATEGORY,
+            VoucherType.SPECIFIC_PRODUCT,
     ):
         return get_products_voucher_discount_for_order(order, order.voucher)
     raise NotImplementedError("Unknown discount type")
@@ -172,15 +163,8 @@ def save_address_in_order(order, address, address_type):
 
     If the other type of address is empty, copy it.
     """
-    if address_type == AddressType.SHIPPING:
-        order.shipping_address = address
-        if not order.billing_address:
-            order.billing_address = address.get_copy()
-    else:
-        order.billing_address = address
-        if not order.shipping_address:
-            order.shipping_address = address.get_copy()
-    order.save(update_fields=["billing_address", "shipping_address"])
+    order.address = address
+    order.save(update_fields=["address"])
 
 
 def addresses_are_equal(address_1, address_2):
@@ -199,19 +183,10 @@ def remove_customer_from_order(order):
     order.save()
 
     if customer:
-        equal_billing_addresses = addresses_are_equal(
-            order.billing_address, customer.default_billing_address
+        equal_addresses = addresses_are_equal(
+            order.address, customer.tak_address
         )
-        if equal_billing_addresses:
-            order.billing_address.delete()
-            order.billing_address = None
-
-        equal_shipping_addresses = addresses_are_equal(
-            order.shipping_address, customer.default_shipping_address
-        )
-        if equal_shipping_addresses:
-            order.shipping_address.delete()
-            order.shipping_address = None
-
-        if equal_billing_addresses or equal_shipping_addresses:
+        if equal_addresses:
+            order.address.delete()
+            order.address = None
             order.save()

@@ -310,8 +310,7 @@ def create_fake_user():
     )
 
     user.addresses.add(address)
-    user.default_billing_address = address
-    user.default_shipping_address = address
+    user.tak_address = address
     user.is_active = True
     user.save()
     return user
@@ -329,7 +328,7 @@ def create_fake_payment(mock_email_confirmation, order):
         payment_token=str(uuid.uuid4()),
         total=order.total.gross.amount,
         currency=order.total.gross.currency,
-        billing_address=order.billing_address,
+        address=order.address,
     )
 
     # Create authorization transaction
@@ -406,17 +405,15 @@ def create_fake_order(discounts, max_order_lines=5):
         [None, User.objects.filter(is_superuser=False).order_by("?").first()]
     )
     if user:
-        address = user.default_shipping_address
+        address = user.tak_address
         order_data = {
             "user": user,
-            "billing_address": user.default_billing_address,
-            "shipping_address": address,
+            "address": user.tak_address
         }
     else:
         address = create_address()
         order_data = {
-            "billing_address": address,
-            "shipping_address": address,
+            "address": address,
             "user_email": get_email(address.first_name, address.last_name),
         }
 

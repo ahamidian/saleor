@@ -66,7 +66,7 @@ class Payment(CountableDjangoObjectType):
     captured_amount = graphene.Field(
         Money, description="Total amount captured for this payment."
     )
-    billing_address = graphene.Field(Address, description="Customer billing address.")
+    address = graphene.Field(Address, description="Customer address.")
     transactions = graphene.List(
         Transaction, description="List of all transactions within this payment."
     )
@@ -120,13 +120,13 @@ class Payment(CountableDjangoObjectType):
         return root.get_captured_amount()
 
     @staticmethod
-    def resolve_billing_address(root: models.Payment, _info):
+    def resolve_address(root: models.Payment, _info):
         return Address(
             first_name=root.billing_first_name,
             last_name=root.billing_last_name,
             company_name=root.billing_company_name,
-            street_address_1=root.billing_address_1,
-            street_address_2=root.billing_address_2,
+            street_address_1=root.address_1,
+            street_address_2=root.address_2,
             city=root.billing_city,
             city_area=root.billing_city_area,
             postal_code=root.billing_postal_code,

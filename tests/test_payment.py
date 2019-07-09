@@ -164,7 +164,7 @@ def test_create_payment(address, settings):
         "total": 10,
         "currency": settings.DEFAULT_CURRENCY,
         "email": "test@example.com",
-        "billing_address": address,
+        "address": address,
         "customer_ip_address": "127.0.0.1",
     }
     payment = create_payment(**data)

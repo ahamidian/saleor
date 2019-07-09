@@ -35,10 +35,10 @@ class Address(CountableDjangoObjectType):
     country = graphene.Field(
         CountryDisplay, required=True, description="Default shop's country"
     )
-    is_default_shipping_address = graphene.Boolean(
+    is_tak_address = graphene.Boolean(
         required=False, description="Address is user's default shipping address"
     )
-    is_default_billing_address = graphene.Boolean(
+    is_tak_address = graphene.Boolean(
         required=False, description="Address is user's default billing address"
     )
 
@@ -66,38 +66,19 @@ class Address(CountableDjangoObjectType):
         return CountryDisplay(code=root.country.code, country=root.country.name)
 
     @staticmethod
-    def resolve_is_default_shipping_address(root: models.Address, _info):
+    def resolve_is_tak_address(root: models.Address, _info):
         """
         This field is added through annotation when using the
         `resolve_addresses` resolver. It's invalid for
-        `resolve_default_shipping_address` and
-        `resolve_default_billing_address`
+        `resolve_tak_address`
         """
-        if not hasattr(root, "user_default_shipping_address_pk"):
+        if not hasattr(root, "user_tak_address_pk"):
             return None
 
-        user_default_shipping_address_pk = getattr(
-            root, "user_default_shipping_address_pk"
+        user_tak_address_pk = getattr(
+            root, "user_tak_address_pk"
         )
-        if user_default_shipping_address_pk == root.pk:
-            return True
-        return False
-
-    @staticmethod
-    def resolve_is_default_billing_address(root: models.Address, _info):
-        """
-        This field is added through annotation when using the
-        `resolve_addresses` resolver. It's invalid for
-        `resolve_default_shipping_address` and
-        `resolve_default_billing_address`
-        """
-        if not hasattr(root, "user_default_billing_address_pk"):
-            return None
-
-        user_default_billing_address_pk = getattr(
-            root, "user_default_billing_address_pk"
-        )
-        if user_default_billing_address_pk == root.pk:
+        if user_tak_address_pk == root.pk:
             return True
         return False
 
@@ -189,8 +170,7 @@ class User(CountableDjangoObjectType):
         model = get_user_model()
         only_fields = [
             "date_joined",
-            "default_billing_address",
-            "default_shipping_address",
+            "tak_address",
             "email",
             "first_name",
             "id",

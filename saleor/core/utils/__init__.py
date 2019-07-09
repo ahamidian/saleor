@@ -122,7 +122,7 @@ def update_conversion_rates_from_openexchangerates():
 
 def get_user_shipping_country(request):
     if request.user.is_authenticated:
-        default_shipping = request.user.default_shipping_address
+        default_shipping = request.user.tak_address
         if default_shipping:
             return default_shipping.country
     return request.country

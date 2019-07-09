@@ -26,7 +26,7 @@ def customer_list(request):
         )
         .distinct()
         .prefetch_related("orders", "addresses")
-        .select_related("default_billing_address", "default_shipping_address")
+        .select_related("tak_address", "tak_address")
         .order_by("email")
     )
     customer_filter = UserFilter(request.GET, queryset=customers)
@@ -46,7 +46,7 @@ def customer_list(request):
 def customer_details(request, pk):
     queryset = User.objects.prefetch_related(
         "orders", "addresses", "notes"
-    ).select_related("default_billing_address", "default_shipping_address")
+    ).select_related("tak_address", "tak_address")
     customer = get_object_or_404(queryset, pk=pk)
     customer_orders = customer.orders.all()
     notes = customer.notes.all()
@@ -86,12 +86,12 @@ def customer_edit(request, pk=None):
 @staff_member_required
 @permission_required("account.manage_users")
 def ajax_users_list(request):
-    queryset = User.objects.select_related("default_billing_address")
+    queryset = User.objects.select_related("tak_address")
     search_query = request.GET.get("q", "")
     if search_query:
         queryset = queryset.filter(
-            Q(default_billing_address__first_name__icontains=search_query)
-            | Q(default_billing_address__last_name__icontains=search_query)
+            Q(tak_address__first_name__icontains=search_query)
+            | Q(tak_address__last_name__icontains=search_query)
             | Q(email__icontains=search_query)
         )
     queryset = queryset.order_by("email")

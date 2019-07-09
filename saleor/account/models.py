@@ -29,20 +29,9 @@ class PossiblePhoneNumberField(PhoneNumberField):
 
 class AddressQueryset(models.QuerySet):
     def annotate_default(self, user):
-        # Set default shipping/billing address pk to None
-        # if default shipping/billing address doesn't exist
-        default_shipping_address_pk, default_billing_address_pk = None, None
-        if user.default_shipping_address:
-            default_shipping_address_pk = user.default_shipping_address.pk
-        if user.default_billing_address:
-            default_billing_address_pk = user.default_billing_address.pk
-
         return user.addresses.annotate(
-            user_default_shipping_address_pk=Value(
-                default_shipping_address_pk, models.IntegerField()
-            ),
-            user_default_billing_address_pk=Value(
-                default_billing_address_pk, models.IntegerField()
+            user_tak_address_pk=Value(
+               None, models.IntegerField()
             ),
         )
 
@@ -143,10 +132,7 @@ class User(PermissionsMixin, AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     note = models.TextField(null=True, blank=True)
     date_joined = models.DateTimeField(default=timezone.now, editable=False)
-    default_shipping_address = models.ForeignKey(
-        Address, related_name="+", null=True, blank=True, on_delete=models.SET_NULL
-    )
-    default_billing_address = models.ForeignKey(
+    tak_address = models.ForeignKey(
         Address, related_name="+", null=True, blank=True, on_delete=models.SET_NULL
     )
     avatar = VersatileImageField(upload_to="user-avatars", blank=True, null=True)
@@ -171,18 +157,13 @@ class User(PermissionsMixin, AbstractBaseUser):
     def get_full_name(self):
         if self.first_name or self.last_name:
             return ("%s %s" % (self.first_name, self.last_name)).strip()
-        if self.default_billing_address:
-            first_name = self.default_billing_address.first_name
-            last_name = self.default_billing_address.last_name
-            if first_name or last_name:
-                return ("%s %s" % (first_name, last_name)).strip()
         return self.email
 
     def get_short_name(self):
         return self.email
 
     def get_ajax_label(self):
-        address = self.default_billing_address
+        address = self.tak_address
         if address:
             return "%s %s (%s)" % (address.first_name, address.last_name, self.email)
         return self.email

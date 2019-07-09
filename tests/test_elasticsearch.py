@@ -180,7 +180,7 @@ def orders(db, address):
     all_pks = set()
     for email, pks in ORDERS.items():
         for pk in pks:
-            Order.objects.create(billing_address=address, user_email=email, pk=pk)
+            Order.objects.create(address=address, user_email=email, pk=pk)
         all_pks = all_pks | pks
     return all_pks
 

@@ -94,7 +94,7 @@ class Checkout(CountableDjangoObjectType):
 
     class Meta:
         only_fields = [
-            "billing_address",
+            "address",
             "created",
             "discount_amount",
             "discount_name",
@@ -103,7 +103,6 @@ class Checkout(CountableDjangoObjectType):
             "last_change",
             "note",
             "quantity",
-            "shipping_address",
             "shipping_method",
             "token",
             "translated_discount_name",

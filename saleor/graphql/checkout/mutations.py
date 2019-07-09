@@ -10,8 +10,7 @@ from ...checkout.utils import (
     add_promo_code_to_checkout,
     add_variant_to_checkout,
     add_voucher_to_checkout,
-    change_billing_address_in_checkout,
-    change_shipping_address_in_checkout,
+    change_address_in_checkout,
     clean_checkout,
     create_order,
     get_or_create_user_checkout,
@@ -108,10 +107,7 @@ class CheckoutCreateInput(graphene.InputObjectType):
         required=True,
     )
     email = graphene.String(description="The customer's email address.")
-    shipping_address = AddressInput(
-        description=("The mailing address to where the checkout will be shipped.")
-    )
-    billing_address = AddressInput(description="Billing address of the customer.")
+    address = AddressInput(description="address of the customer.")
 
 
 class CheckoutCreate(ModelMutation, I18nMixin):
@@ -140,23 +136,15 @@ class CheckoutCreate(ModelMutation, I18nMixin):
             cleaned_input["variants"] = variants
             cleaned_input["quantities"] = quantities
 
-        default_shipping_address = None
-        default_billing_address = None
+        tak_address = None
         if user.is_authenticated:
-            default_billing_address = user.default_billing_address
-            default_shipping_address = user.default_shipping_address
+            tak_address = user.tak_address
 
-        if "shipping_address" in data:
-            shipping_address = cls.validate_address(data["shipping_address"])
-            cleaned_input["shipping_address"] = shipping_address
+        if "address" in data:
+            address = cls.validate_address(data["address"])
+            cleaned_input["address"] = address
         else:
-            cleaned_input["shipping_address"] = default_shipping_address
-
-        if "billing_address" in data:
-            billing_address = cls.validate_address(data["billing_address"])
-            cleaned_input["billing_address"] = billing_address
-        else:
-            cleaned_input["billing_address"] = default_billing_address
+            cleaned_input["address"] = tak_address
 
         # Use authenticated user's email as default email
         if user.is_authenticated:
@@ -167,14 +155,10 @@ class CheckoutCreate(ModelMutation, I18nMixin):
 
     @classmethod
     def save(cls, info, instance, cleaned_input):
-        shipping_address = cleaned_input.get("shipping_address")
-        billing_address = cleaned_input.get("billing_address")
-        if shipping_address:
-            shipping_address.save()
-            instance.shipping_address = shipping_address.get_copy()
-        if billing_address:
-            billing_address.save()
-            instance.billing_address = billing_address.get_copy()
+        address = cleaned_input.get("address")
+        if address:
+            address.save()
+            instance.shipping_address = address.get_copy()
 
         instance.save()
 
@@ -339,12 +323,12 @@ class CheckoutCustomerDetach(BaseMutation):
         return CheckoutCustomerDetach(checkout=checkout)
 
 
-class CheckoutShippingAddressUpdate(BaseMutation, I18nMixin):
+class CheckoutAddressUpdate(BaseMutation, I18nMixin):
     checkout = graphene.Field(Checkout, description="An updated checkout")
 
     class Arguments:
         checkout_id = graphene.ID(required=True, description="ID of the Checkout.")
-        shipping_address = AddressInput(
+        address = AddressInput(
             required=True,
             description="The mailing address to where the checkout will be shipped.",
         )
@@ -353,12 +337,12 @@ class CheckoutShippingAddressUpdate(BaseMutation, I18nMixin):
         description = "Update shipping address in the existing Checkout."
 
     @classmethod
-    def perform_mutation(cls, _root, info, checkout_id, shipping_address):
+    def perform_mutation(cls, _root, info, checkout_id, address):
         checkout = cls.get_node_or_error(
             info, checkout_id, only_type=Checkout, field="checkout_id"
         )
-        shipping_address = cls.validate_address(
-            shipping_address, instance=checkout.shipping_address
+        address = cls.validate_address(
+            address, instance=checkout.address
         )
 
         # FIXME test if below function is called
@@ -369,38 +353,11 @@ class CheckoutShippingAddressUpdate(BaseMutation, I18nMixin):
         )
 
         with transaction.atomic():
-            shipping_address.save()
-            change_shipping_address_in_checkout(checkout, shipping_address)
+            address.save()
+            change_address_in_checkout(checkout, address)
         recalculate_checkout_discount(checkout, info.context.discounts)
 
-        return CheckoutShippingAddressUpdate(checkout=checkout)
-
-
-class CheckoutBillingAddressUpdate(CheckoutShippingAddressUpdate):
-    checkout = graphene.Field(Checkout, description="An updated checkout")
-
-    class Arguments:
-        checkout_id = graphene.ID(required=True, description="ID of the Checkout.")
-        billing_address = AddressInput(
-            required=True, description=("The billing address of the checkout.")
-        )
-
-    class Meta:
-        description = "Update billing address in the existing Checkout."
-
-    @classmethod
-    def perform_mutation(cls, _root, info, checkout_id, billing_address):
-        checkout = cls.get_node_or_error(
-            info, checkout_id, only_type=Checkout, field="checkout_id"
-        )
-
-        billing_address = cls.validate_address(
-            billing_address, instance=checkout.billing_address
-        )
-        with transaction.atomic():
-            billing_address.save()
-            change_billing_address_in_checkout(checkout, billing_address)
-        return CheckoutBillingAddressUpdate(checkout=checkout)
+        return CheckoutAddressUpdate(checkout=checkout)
 
 
 class CheckoutEmailUpdate(BaseMutation):
@@ -504,13 +461,11 @@ class CheckoutComplete(BaseMutation):
                 )
 
         try:
-            billing_address = order_data["billing_address"]  # type: models.Address
-            shipping_address = order_data["shipping_address"]  # type: models.Address
+            address = order_data["address"]  # type: models.Address
             gateway_process_payment(
                 payment=payment,
                 payment_token=payment.token,
-                billing_address=AddressData(**billing_address.as_data()),
-                shipping_address=AddressData(**shipping_address.as_data()),
+                address=AddressData(**address.as_data()),
             )
         except PaymentError as e:
             abort_order_data(order_data)

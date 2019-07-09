@@ -27,20 +27,10 @@
       </thead>
     <tbody>
     <tr>
-      {% if order.shipping_address %}
-        <td valign="top">
-          {% with order.shipping_address as address %}
-            <h2>
-              {% trans "Shipping address" context "Packing slip shipping address" %}
-            </h2>
-            {% include "dashboard/includes/_address.html" with address=address only %}
-          {% endwith %}
-        </td>
-      {% endif %}
       <td valign="top">
-        {% with order.billing_address as address %}
+        {% with order.address as address %}
           <h2>
-            {% trans "Billing address" context "Packing slip billing address" %}
+            {% trans "Address" context "Packing slip Address" %}
           </h2>
           {% include "dashboard/includes/_address.html" with address=address only %}
         {% endwith %}

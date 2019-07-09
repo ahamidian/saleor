@@ -533,10 +533,10 @@ def test_draft_order_create(
     order = Order.objects.first()
     assert order.user == customer_user
     # billing address should be copied
-    assert order.billing_address.pk != customer_user.default_billing_address.pk
+    assert order.address.pk != customer_user.tak_address.pk
     assert (
-        order.billing_address.as_data()
-        == customer_user.default_billing_address.as_data()
+        order.address.as_data()
+        == customer_user.tak_address.as_data()
     )
     assert order.shipping_method == shipping_method
     assert order.shipping_address.first_name == graphql_address_data["firstName"]
@@ -1146,8 +1146,7 @@ def test_order_update(
         """
     email = "not_default@example.com"
     assert not order.user_email == email
-    assert not order.shipping_address.first_name == graphql_address_data["firstName"]
-    assert not order.billing_address.last_name == graphql_address_data["lastName"]
+    assert not order.address.last_name == graphql_address_data["lastName"]
     order_id = graphene.Node.to_global_id("Order", order.id)
     variables = {"id": order_id, "email": email, "address": graphql_address_data}
     response = staff_api_client.post_graphql(
@@ -1159,10 +1158,8 @@ def test_order_update(
     assert data["userEmail"] == email
 
     order.refresh_from_db()
-    order.shipping_address.refresh_from_db()
-    order.billing_address.refresh_from_db()
-    assert order.shipping_address.first_name == graphql_address_data["firstName"]
-    assert order.billing_address.last_name == graphql_address_data["lastName"]
+    order.address.refresh_from_db()
+    assert order.address.last_name == graphql_address_data["lastName"]
     assert order.user_email == email
     assert order.user is None
 
@@ -1199,10 +1196,8 @@ def test_order_update_anonymous_user_no_user_email(
         query, variables, permissions=[permission_manage_orders]
     )
     content = get_graphql_content(response)
-    order.shipping_address.refresh_from_db()
-    order.billing_address.refresh_from_db()
-    assert order.shipping_address.first_name != first_name
-    assert order.billing_address.last_name != last_name
+    order.address.refresh_from_db()
+    assert order.address.last_name != last_name
     data = content["data"]["orderUpdate"]["order"]
     assert data["status"] == OrderStatus.DRAFT.upper()
 
@@ -1246,10 +1241,8 @@ def test_order_update_user_email_existing_user(
     assert data["userEmail"] == email
 
     order.refresh_from_db()
-    order.shipping_address.refresh_from_db()
-    order.billing_address.refresh_from_db()
-    assert order.shipping_address.first_name == graphql_address_data["firstName"]
-    assert order.billing_address.last_name == graphql_address_data["lastName"]
+    order.address.refresh_from_db()
+    assert order.address.last_name == graphql_address_data["lastName"]
     assert order.user_email == email
     assert order.user == customer_user
 
