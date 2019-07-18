@@ -60,7 +60,7 @@ class StaffForm(forms.ModelForm):
             self.fields["is_active"].disabled = True
             self.fields["is_staff"].disabled = True
 
-        address = self.instance.tak_address
+        address = self.instance.default_address
         if not address:
             return
         if address.first_name:

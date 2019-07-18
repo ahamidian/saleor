@@ -257,7 +257,7 @@ def test_compare_addresses_different_country(address):
 
 
 def test_user_ajax_label(customer_user):
-    address = customer_user.tak_address
+    address = customer_user.default_address
     label = "%s %s (%s)" % (address.first_name, address.last_name, customer_user.email)
     assert customer_user.get_ajax_label() == label
 
@@ -296,7 +296,7 @@ def test_get_full_name_user_with_address(
 ):
     address.first_name = first_name
     address.last_name = last_name
-    user = User(email=email, tak_address=address)
+    user = User(email=email, default_address=address)
     assert user.get_full_name() == full_name
 
 
@@ -316,13 +316,13 @@ def test_get_full_name(email, first_name, last_name, full_name, address):
         email=email,
         first_name=first_name,
         last_name=last_name,
-        tak_address=address,
+        default_address=address,
     )
     assert user.get_full_name() == full_name
 
 
 @pytest.mark.parametrize(
-    "first_name, tak_address_first_name, result",
+    "first_name, default_address_first_name, result",
     [
         ("John", "Arnold", "John"),
         ("John", "", "John"),
@@ -331,22 +331,22 @@ def test_get_full_name(email, first_name, last_name, full_name, address):
     ],
 )
 def test_get_user_first_name(
-    first_name, tak_address_first_name, result, address
+    first_name, default_address_first_name, result, address
 ):
-    address.first_name = tak_address_first_name
-    user = User(first_name=first_name, tak_address=address)
+    address.first_name = default_address_first_name
+    user = User(first_name=first_name, default_address=address)
     assert get_user_first_name(user) == result
 
 
 @pytest.mark.parametrize(
-    "last_name, tak_address_last_name, result",
+    "last_name, default_address_last_name, result",
     [("Doe", "Green", "Doe"), ("Doe", "", "Doe"), ("", "Green", "Green"), ("", "", "")],
 )
 def test_get_user_last_name(
-    last_name, tak_address_last_name, result, address
+    last_name, default_address_last_name, result, address
 ):
-    address.last_name = tak_address_last_name
-    user = User(last_name=last_name, tak_address=address)
+    address.last_name = default_address_last_name
+    user = User(last_name=last_name, default_address=address)
     assert get_user_last_name(user) == result
 
 

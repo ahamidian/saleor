@@ -38,12 +38,12 @@ def test_checkout_create(api_client, variant, graphql_address_data):
     """Create checkout object using GraphQL API."""
     variant_id = graphene.Node.to_global_id("ProductVariant", variant.id)
     test_email = "test@example.com"
-    shipping_address = graphql_address_data
+    address = graphql_address_data
     variables = {
         "checkoutInput": {
             "lines": [{"quantity": 1, "variantId": variant_id}],
             "email": test_email,
-            "shippingAddress": shipping_address,
+            "shippingAddress": address,
         }
     }
     assert not Checkout.objects.exists()
@@ -58,20 +58,20 @@ def test_checkout_create(api_client, variant, graphql_address_data):
     checkout_line = new_checkout.lines.first()
     assert checkout_line.variant == variant
     assert checkout_line.quantity == 1
-    assert new_checkout.shipping_address is not None
-    assert new_checkout.shipping_address.first_name == shipping_address["firstName"]
-    assert new_checkout.shipping_address.last_name == shipping_address["lastName"]
+    assert new_checkout.address is not None
+    assert new_checkout.address.first_name == address["firstName"]
+    assert new_checkout.address.last_name == address["lastName"]
     assert (
-        new_checkout.shipping_address.street_address_1
-        == shipping_address["streetAddress1"]
+        new_checkout.address.street_address_1
+        == address["streetAddress1"]
     )
     assert (
-        new_checkout.shipping_address.street_address_2
-        == shipping_address["streetAddress2"]
+        new_checkout.address.street_address_2
+        == address["streetAddress2"]
     )
-    assert new_checkout.shipping_address.postal_code == shipping_address["postalCode"]
-    assert new_checkout.shipping_address.country == shipping_address["country"]
-    assert new_checkout.shipping_address.city == shipping_address["city"].upper()
+    assert new_checkout.address.postal_code == address["postalCode"]
+    assert new_checkout.address.country == address["country"]
+    assert new_checkout.address.city == address["city"].upper()
 
 
 def test_checkout_create_cannot_add_too_many_quantities(
@@ -80,12 +80,12 @@ def test_checkout_create_cannot_add_too_many_quantities(
 
     variant_id = graphene.Node.to_global_id("ProductVariant", variant.id)
     test_email = "test@example.com"
-    shipping_address = graphql_address_data
+    address = graphql_address_data
     variables = {
         "checkoutInput": {
             "lines": [{"quantity": 51, "variantId": variant_id}],
             "email": test_email,
-            "shippingAddress": shipping_address,
+            "shippingAddress": address,
         }
     }
     assert not Checkout.objects.exists()
@@ -166,9 +166,9 @@ def test_checkout_create_logged_in_customer(user_api_client, variant):
     checkout_user = new_checkout.user
     customer = user_api_client.user
     assert customer.id == checkout_user.id
-    assert customer.tak_address_id != new_checkout.address_id
+    assert customer.default_address_id != new_checkout.address_id
     assert (
-        customer.tak_address.as_data()
+        customer.default_address.as_data()
         == new_checkout.address.as_data()
     )
     assert customer.email == new_checkout.email
@@ -220,9 +220,9 @@ def test_checkout_create_logged_in_customer_custom_addresses(
     customer = user_api_client.user
     assert customer.id == checkout_user.id
     assert not (
-        customer.tak_address_id == new_checkout.address_id
+        customer.default_address_id == new_checkout.address_id
     )
-    assert not (customer.tak_address_id == new_checkout.address_id)
+    assert not (customer.default_address_id == new_checkout.address_id)
     assert new_checkout.address.first_name == address["firstName"]
 
 
@@ -231,12 +231,12 @@ def test_checkout_create_check_lines_quantity(
 ):
     variant_id = graphene.Node.to_global_id("ProductVariant", variant.id)
     test_email = "test@example.com"
-    shipping_address = graphql_address_data
+    address = graphql_address_data
     variables = {
         "checkoutInput": {
             "lines": [{"quantity": 3, "variantId": variant_id}],
             "email": test_email,
-            "shippingAddress": shipping_address,
+            "shippingAddress": address,
         }
     }
     assert not Checkout.objects.exists()
@@ -270,7 +270,7 @@ def test_checkout_available_payment_gateways(api_client, checkout_with_item, set
 def test_checkout_available_shipping_methods(
     api_client, checkout_with_item, address, shipping_zone
 ):
-    checkout_with_item.shipping_address = address
+    checkout_with_item.address = address
     checkout_with_item.save()
 
     query = """
@@ -627,7 +627,7 @@ def test_checkout_customer_detach(user_api_client, checkout_with_item, customer_
     assert checkout.user is None
 
 
-MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE = """
+MUTATION_CHECKOUT_ADDRESS_UPDATE = """
     mutation checkoutShippingAddressUpdate(
             $checkoutId: ID!, $shippingAddress: AddressInput!) {
         checkoutShippingAddressUpdate(
@@ -644,52 +644,52 @@ MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE = """
     }"""
 
 
-def test_checkout_shipping_address_update(
+def test_checkout_address_update(
     user_api_client, checkout_with_item, graphql_address_data
 ):
     checkout = checkout_with_item
-    assert checkout.shipping_address is None
+    assert checkout.address is None
     checkout_id = graphene.Node.to_global_id("Checkout", checkout.pk)
 
-    shipping_address = graphql_address_data
-    variables = {"checkoutId": checkout_id, "shippingAddress": shipping_address}
+    address = graphql_address_data
+    variables = {"checkoutId": checkout_id, "shippingAddress": address}
 
     response = user_api_client.post_graphql(
-        MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE, variables
+        MUTATION_CHECKOUT_ADDRESS_UPDATE, variables
     )
     content = get_graphql_content(response)
     data = content["data"]["checkoutShippingAddressUpdate"]
     assert not data["errors"]
     checkout.refresh_from_db()
-    assert checkout.shipping_address is not None
-    assert checkout.shipping_address.first_name == shipping_address["firstName"]
-    assert checkout.shipping_address.last_name == shipping_address["lastName"]
+    assert checkout.address is not None
+    assert checkout.address.first_name == address["firstName"]
+    assert checkout.address.last_name == address["lastName"]
     assert (
-        checkout.shipping_address.street_address_1 == shipping_address["streetAddress1"]
+        checkout.address.street_address_1 == address["streetAddress1"]
     )
     assert (
-        checkout.shipping_address.street_address_2 == shipping_address["streetAddress2"]
+        checkout.address.street_address_2 == address["streetAddress2"]
     )
-    assert checkout.shipping_address.postal_code == shipping_address["postalCode"]
-    assert checkout.shipping_address.country == shipping_address["country"]
-    assert checkout.shipping_address.city == shipping_address["city"].upper()
+    assert checkout.address.postal_code == address["postalCode"]
+    assert checkout.address.country == address["country"]
+    assert checkout.address.city == address["city"].upper()
 
 
-def test_checkout_shipping_address_with_invalid_phone_number_returns_error(
+def test_checkout_address_with_invalid_phone_number_returns_error(
     user_api_client, checkout_with_item, graphql_address_data
 ):
     checkout = checkout_with_item
-    assert checkout.shipping_address is None
+    assert checkout.address is None
 
-    shipping_address = graphql_address_data
-    shipping_address["phone"] = "+33600000"
+    address = graphql_address_data
+    address["phone"] = "+33600000"
 
     response = get_graphql_content(
         user_api_client.post_graphql(
-            MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE,
+            MUTATION_CHECKOUT_ADDRESS_UPDATE,
             {
                 "checkoutId": graphene.Node.to_global_id("Checkout", checkout.pk),
-                "shippingAddress": shipping_address,
+                "shippingAddress": address,
             },
         )
     )["data"]["checkoutShippingAddressUpdate"]
@@ -701,38 +701,38 @@ def test_checkout_shipping_address_with_invalid_phone_number_returns_error(
 @pytest.mark.parametrize(
     "number", ["+48321321888", "+44 (113) 892-1113", "00 44 (0) 20 7839 1377"]
 )
-def test_checkout_shipping_address_update_with_phone_country_prefix(
+def test_checkout_address_update_with_phone_country_prefix(
     number, user_api_client, checkout_with_item, graphql_address_data
 ):
     checkout = checkout_with_item
-    assert checkout.shipping_address is None
+    assert checkout.address is None
     checkout_id = graphene.Node.to_global_id("Checkout", checkout.pk)
 
-    shipping_address = graphql_address_data
-    shipping_address["phone"] = number
-    variables = {"checkoutId": checkout_id, "shippingAddress": shipping_address}
+    address = graphql_address_data
+    address["phone"] = number
+    variables = {"checkoutId": checkout_id, "shippingAddress": address}
 
     response = user_api_client.post_graphql(
-        MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE, variables
+        MUTATION_CHECKOUT_ADDRESS_UPDATE, variables
     )
     content = get_graphql_content(response)
     data = content["data"]["checkoutShippingAddressUpdate"]
     assert not data["errors"]
 
 
-def test_checkout_shipping_address_update_without_phone_country_prefix(
+def test_checkout_address_update_without_phone_country_prefix(
     user_api_client, checkout_with_item, graphql_address_data
 ):
     checkout = checkout_with_item
-    assert checkout.shipping_address is None
+    assert checkout.address is None
     checkout_id = graphene.Node.to_global_id("Checkout", checkout.pk)
 
-    shipping_address = graphql_address_data
-    shipping_address["phone"] = "+1-202-555-0132"
-    variables = {"checkoutId": checkout_id, "shippingAddress": shipping_address}
+    address = graphql_address_data
+    address["phone"] = "+1-202-555-0132"
+    variables = {"checkoutId": checkout_id, "shippingAddress": address}
 
     response = user_api_client.post_graphql(
-        MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE, variables
+        MUTATION_CHECKOUT_ADDRESS_UPDATE, variables
     )
     content = get_graphql_content(response)
     data = content["data"]["checkoutShippingAddressUpdate"]
@@ -743,15 +743,15 @@ def test_checkout_address_update_invalid_country_code(
     user_api_client, checkout_with_item, graphql_address_data
 ):
     checkout = checkout_with_item
-    assert checkout.shipping_address is None
+    assert checkout.address is None
     checkout_id = graphene.Node.to_global_id("Checkout", checkout.pk)
 
-    shipping_address = graphql_address_data
-    shipping_address["country"] = "CODE"
-    variables = {"checkoutId": checkout_id, "shippingAddress": shipping_address}
+    address = graphql_address_data
+    address["country"] = "CODE"
+    variables = {"checkoutId": checkout_id, "shippingAddress": address}
 
     response = user_api_client.post_graphql(
-        MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE, variables
+        MUTATION_CHECKOUT_ADDRESS_UPDATE, variables
     )
     content = get_graphql_content(response)
     data = content["data"]["checkoutShippingAddressUpdate"]
@@ -763,7 +763,7 @@ def test_checkout_address_update(
     user_api_client, checkout_with_item, graphql_address_data
 ):
     checkout = checkout_with_item
-    assert checkout.shipping_address is None
+    assert checkout.address is None
     checkout_id = graphene.Node.to_global_id("Checkout", checkout.pk)
 
     query = """
@@ -915,7 +915,7 @@ def test_checkout_complete(
     order_line = order.lines.first()
     assert checkout_line_quantity == order_line.quantity
     assert checkout_line_variant == order_line.variant
-    assert order.shipping_address == address
+    assert order.address == address
     assert order.shipping_method == checkout.shipping_method
     assert order.payments.exists()
     order_payment = order.payments.first()
@@ -1254,7 +1254,7 @@ def test_clean_checkout(checkout_with_item, payment_dummy, address, shipping_met
 
 def test_clean_checkout_no_shipping_method(checkout_with_item, address):
     checkout = checkout_with_item
-    checkout.shipping_address = address
+    checkout.address = address
     checkout.save()
 
     with pytest.raises(ValidationError) as e:
@@ -1264,7 +1264,7 @@ def test_clean_checkout_no_shipping_method(checkout_with_item, address):
     assert e.value.error_list[0].message == msg
 
 
-def test_clean_checkout_no_shipping_address(checkout_with_item, shipping_method):
+def test_clean_checkout_no_address(checkout_with_item, shipping_method):
     checkout = checkout_with_item
     checkout.shipping_method = shipping_method
     checkout.save()
@@ -1279,7 +1279,7 @@ def test_clean_checkout_invalid_shipping_method(
     checkout_with_item, address, shipping_zone_without_countries
 ):
     checkout = checkout_with_item
-    checkout.shipping_address = address
+    checkout.address = address
     shipping_method = shipping_zone_without_countries.shipping_methods.first()
     checkout.shipping_method = shipping_method
     checkout.save()

@@ -30,7 +30,7 @@ class PossiblePhoneNumberField(PhoneNumberField):
 class AddressQueryset(models.QuerySet):
     def annotate_default(self, user):
         return user.addresses.annotate(
-            user_tak_address_pk=Value(
+            user_default_address_pk=Value(
                None, models.IntegerField()
             ),
         )
@@ -132,7 +132,7 @@ class User(PermissionsMixin, AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     note = models.TextField(null=True, blank=True)
     date_joined = models.DateTimeField(default=timezone.now, editable=False)
-    tak_address = models.ForeignKey(
+    default_address = models.ForeignKey(
         Address, related_name="+", null=True, blank=True, on_delete=models.SET_NULL
     )
     avatar = VersatileImageField(upload_to="user-avatars", blank=True, null=True)
@@ -163,7 +163,7 @@ class User(PermissionsMixin, AbstractBaseUser):
         return self.email
 
     def get_ajax_label(self):
-        address = self.tak_address
+        address = self.default_address
         if address:
             return "%s %s (%s)" % (address.first_name, address.last_name, self.email)
         return self.email

@@ -9,15 +9,15 @@ from ..forms import PermissionMultipleChoiceField
 SORT_BY_FIELDS = (
     ("email", "email"),
     ("first_name", "name"),
-    ("tak_address__city", "location"),
+    ("default_address__city", "location"),
 )
 
 SORT_BY_FIELDS_LABELS = {
     "email": pgettext_lazy("Customer list sorting option", "email"),
-    "tak_address__first_name": pgettext_lazy(
+    "default_address__first_name": pgettext_lazy(
         "Customer list sorting option", "name"
     ),
-    "tak_address__city": pgettext_lazy(
+    "default_address__city": pgettext_lazy(
         "Customer list sorting option", "location"
     ),
 }

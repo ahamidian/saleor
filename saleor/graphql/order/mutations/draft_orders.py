@@ -89,11 +89,11 @@ class DraftOrderCreate(ModelMutation, I18nMixin):
         # Set up default addresses if possible
         user = cleaned_input.get("user")
         if user and not address:
-            cleaned_input["address"] = user.tak_address
+            cleaned_input["address"] = user.default_address
 
         if address:
             address = cls.validate_address(
-                address, instance=instance.shipping_address
+                address, instance=instance.address
             )
             cleaned_input["address"] = address
         return cleaned_input
@@ -224,8 +224,8 @@ class DraftOrderComplete(BaseMutation):
         if not order.is_shipping_required():
             order.shipping_method_name = None
             order.shipping_price = zero_taxed_money()
-            if order.shipping_address:
-                order.shipping_address.delete()
+            if order.address:
+                order.address.delete()
 
         order.save()
 

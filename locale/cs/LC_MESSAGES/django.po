@@ -2000,13 +2000,13 @@ msgctxt "Checkout payment primary action"
 msgid "Place order"
 msgstr "Odeslat objednávku"
 
-#: templates/checkout/shipping_address.html:8
+#: templates/checkout/address.html:8
 #: templates/checkout/shipping_method.html:7
 msgctxt "Checkout shipping address title"
 msgid "Shipping address"
 msgstr "Dodací adresa"
 
-#: templates/checkout/shipping_address.html:21
+#: templates/checkout/address.html:21
 msgctxt "Checkout shipping address primary action"
 msgid "Continue"
 msgstr "Pokračovat"

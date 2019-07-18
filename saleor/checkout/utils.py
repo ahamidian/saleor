@@ -252,7 +252,7 @@ def get_or_create_anonymous_checkout_from_token(
 def get_or_create_user_checkout(user: User, checkout_queryset=Checkout.objects.all()):
     """Return an open checkout for given user or create a new one."""
     defaults = {
-        "address": user.tak_address,
+        "address": user.default_address,
     }
 
     created = False
@@ -339,7 +339,7 @@ def change_checkout_user(checkout, user):
     if open_checkout is not None:
         open_checkout.delete()
     checkout.user = user
-    checkout.address = user.tak_address
+    checkout.address = user.default_address
     checkout.save(update_fields=["user", "address"])
 
 
@@ -387,22 +387,22 @@ def add_variant_to_checkout(
     update_checkout_quantity(checkout)
 
 
-def get_shipping_address_forms(checkout, user_addresses, data, country):
+def get_address_forms(checkout, user_addresses, data, country):
     """Forms initialized with data depending on shipping address in checkout."""
-    shipping_address = (
-            checkout.shipping_address or checkout.user.tak_address
+    address = (
+            checkout.address or checkout.user.default_address
     )
 
-    if shipping_address and shipping_address in user_addresses:
+    if address and address in user_addresses:
         address_form, preview = get_address_form(
             data, country_code=country.code, initial={"country": country}
         )
         addresses_form = AddressChoiceForm(
-            data, addresses=user_addresses, initial={"address": shipping_address.id}
+            data, addresses=user_addresses, initial={"address": address.id}
         )
-    elif shipping_address:
+    elif address:
         address_form, preview = get_address_form(
-            data, country_code=shipping_address.country.code, instance=shipping_address
+            data, country_code=address.country.code, instance=address
         )
         addresses_form = AddressChoiceForm(data, addresses=user_addresses)
     else:
@@ -414,9 +414,9 @@ def get_shipping_address_forms(checkout, user_addresses, data, country):
     return address_form, addresses_form, preview
 
 
-def update_shipping_address_in_checkout(checkout, user_addresses, data, country):
+def update_address_in_checkout(checkout, user_addresses, data, country):
     """Return shipping address choice forms and if an address was updated."""
-    address_form, addresses_form, preview = get_shipping_address_forms(
+    address_form, addresses_form, preview = get_address_forms(
         checkout, user_addresses, data, country
     )
 
@@ -441,13 +441,13 @@ def update_shipping_address_in_checkout(checkout, user_addresses, data, country)
     return addresses_form, address_form, updated
 
 
-def update_shipping_address_in_anonymous_checkout(checkout, data, country):
+def update_address_in_anonymous_checkout(checkout, data, country):
     """Return shipping address choice forms and if an address was updated."""
     address_form, preview = get_address_form(
         data,
         country_code=country.code,
         autocomplete_type="shipping",
-        instance=checkout.shipping_address,
+        instance=checkout.address,
         initial={"country": country},
     )
     user_form = AnonymousUserShippingForm(
@@ -479,7 +479,7 @@ def get_billing_forms_with_shipping(checkout, data, user_addresses, country):
         addresses_form = BillingAddressChoiceForm(
             data,
             addresses=user_addresses,
-            initial={"address": BillingAddressChoiceForm.SHIPPING_ADDRESS},
+            initial={"address": BillingAddressChoiceForm.ADDRESS},
         )
     elif address in user_addresses:
         address_form, preview = get_address_form(
@@ -522,11 +522,11 @@ def update_address_in_checkout_with_shipping(
         address = None
         address_id = addresses_form.cleaned_data["address"]
 
-        if address_id == BillingAddressChoiceForm.SHIPPING_ADDRESS:
-            if checkout.user and checkout.shipping_address in user_addresses:
-                address = checkout.shipping_address
+        if address_id == BillingAddressChoiceForm.ADDRESS:
+            if checkout.user and checkout.address in user_addresses:
+                address = checkout.address
             else:
-                address = checkout.shipping_address.get_copy()
+                address = checkout.address.get_copy()
         elif address_id != BillingAddressChoiceForm.NEW_ADDRESS:
             address = user_addresses.get(id=address_id)
         elif address_form.is_valid():
@@ -607,8 +607,8 @@ def get_summary_without_shipping_forms(checkout, user_addresses, data, country):
             country_code=country.code,
             initial={"country": country},
         )
-        if checkout.user and checkout.user.tak_address:
-            initial_address = checkout.user.tak_address.id
+        if checkout.user and checkout.user.default_address:
+            initial_address = checkout.user.default_address.id
         else:
             initial_address = AddressChoiceForm.NEW_ADDRESS
 
@@ -736,7 +736,7 @@ def _get_shipping_voucher_discount_for_checkout(voucher, checkout, discounts=Non
         raise NotApplicable(msg)
 
     # check if voucher is limited to specified countries
-    shipping_country = checkout.shipping_address.country
+    shipping_country = checkout.address.country
     if voucher.countries and shipping_country.code not in voucher.countries:
         msg = pgettext(
             "Voucher not applicable", "This offer is not valid in your country."
@@ -933,7 +933,7 @@ def is_valid_shipping_method(checkout, discounts):
     valid_methods = ShippingMethod.objects.applicable_shipping_methods(
         price=calculate_checkout_subtotal(checkout, discounts).gross,
         weight=checkout.get_total_weight(),
-        country_code=checkout.shipping_address.country.code,
+        country_code=checkout.address.country.code,
     )
     if checkout.shipping_method not in valid_methods:
         clear_shipping_method(checkout)
@@ -980,15 +980,15 @@ def _process_shipping_data_for_order(checkout, shipping_price):
     if not checkout.is_shipping_required():
         return {}
 
-    shipping_address = checkout.shipping_address
+    address = checkout.address
 
     if checkout.user:
-        store_user_address(checkout.user, shipping_address, AddressType.SHIPPING)
-        if checkout.user.addresses.filter(pk=shipping_address.pk).exists():
-            shipping_address = shipping_address.get_copy()
+        store_user_address(checkout.user, address, AddressType.SHIPPING)
+        if checkout.user.addresses.filter(pk=address.pk).exists():
+            address = address.get_copy()
 
     return {
-        "shipping_address": shipping_address,
+        "address": address,
         "shipping_method": checkout.shipping_method,
         "shipping_method_name": smart_text(checkout.shipping_method),
         "shipping_price": shipping_price,

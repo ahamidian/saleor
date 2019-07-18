@@ -28,7 +28,7 @@ from ..core.types import Upload
 from ..core.utils import validate_image_file
 from .utils import CustomerDeleteMixin, StaffDeleteMixin, UserDeleteMixin
 
-ADDRESS_FIELD = "tak_address"
+ADDRESS_FIELD = "default_address"
 
 
 def send_user_password_reset_email(user, site):
@@ -90,10 +90,10 @@ class UserInput(graphene.InputObjectType):
 
 
 class UserAddressInput(graphene.InputObjectType):
-    tak_address = AddressInput(
+    default_address = AddressInput(
         description="Billing address of the customer."
     )
-    tak_address = AddressInput(
+    default_address = AddressInput(
         description="Shipping address of the customer."
     )
 
@@ -148,10 +148,10 @@ class CustomerCreate(ModelMutation, I18nMixin):
     @classmethod
     def save(cls, info, instance, cleaned_input):
         # FIXME: save address in user.addresses as well
-        tak_address = cleaned_input.get(ADDRESS_FIELD)
-        if tak_address:
-            tak_address.save()
-            instance.tak_address = tak_address
+        default_address = cleaned_input.get(ADDRESS_FIELD)
+        if default_address:
+            default_address.save()
+            instance.default_address = default_address
 
         is_creation = instance.pk is None
         super().save(info, instance, cleaned_input)

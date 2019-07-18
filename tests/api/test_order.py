@@ -198,7 +198,7 @@ def test_order_query(
     expected_methods = ShippingMethod.objects.applicable_shipping_methods(
         price=order.get_subtotal().gross.amount,
         weight=order.get_total_weight(),
-        country_code=order.shipping_address.country.code,
+        country_code=order.address.country.code,
     )
     assert len(order_data["availableShippingMethods"]) == (expected_methods.count())
 
@@ -510,14 +510,14 @@ def test_draft_order_create(
         {"variantId": variant_0_id, "quantity": 2},
         {"variantId": variant_1_id, "quantity": 1},
     ]
-    shipping_address = graphql_address_data
+    address = graphql_address_data
     shipping_id = graphene.Node.to_global_id("ShippingMethod", shipping_method.id)
     voucher_id = graphene.Node.to_global_id("Voucher", voucher.id)
     variables = {
         "user": user_id,
         "discount": discount,
         "lines": variant_list,
-        "shippingAddress": shipping_address,
+        "shippingAddress": address,
         "shippingMethod": shipping_id,
         "voucher": voucher_id,
     }
@@ -533,13 +533,13 @@ def test_draft_order_create(
     order = Order.objects.first()
     assert order.user == customer_user
     # billing address should be copied
-    assert order.address.pk != customer_user.tak_address.pk
+    assert order.address.pk != customer_user.default_address.pk
     assert (
         order.address.as_data()
-        == customer_user.tak_address.as_data()
+        == customer_user.default_address.as_data()
     )
     assert order.shipping_method == shipping_method
-    assert order.shipping_address.first_name == graphql_address_data["firstName"]
+    assert order.address.first_name == graphql_address_data["firstName"]
 
     # Ensure the correct event was created
     created_draft_event = OrderEvent.objects.get(
@@ -665,7 +665,7 @@ def test_validate_draft_order_wrong_shipping(order_with_lines):
     shipping_zone = order.shipping_method.shipping_zone
     shipping_zone.countries = ["DE"]
     shipping_zone.save()
-    assert order.shipping_address.country.code not in shipping_zone.countries
+    assert order.address.country.code not in shipping_zone.countries
     with pytest.raises(ValidationError) as e:
         validate_draft_order(order)
     msg = "Shipping method is not valid for chosen shipping address"
@@ -1727,7 +1727,7 @@ def test_order_update_shipping_shipping_required(
     )
 
 
-def test_order_update_shipping_no_shipping_address(
+def test_order_update_shipping_no_address(
     staff_api_client,
     permission_manage_orders,
     order_with_lines,
@@ -1735,7 +1735,7 @@ def test_order_update_shipping_no_shipping_address(
     staff_user,
 ):
     order = order_with_lines
-    order.shipping_address = None
+    order.address = None
     order.save()
     query = ORDER_UPDATE_SHIPPING_QUERY
     order_id = graphene.Node.to_global_id("Order", order.id)
@@ -1763,7 +1763,7 @@ def test_order_update_shipping_incorrect_shipping_method(
     zone = shipping_method.shipping_zone
     zone.countries = ["DE"]
     zone.save()
-    assert order.shipping_address.country.code not in zone.countries
+    assert order.address.country.code not in zone.countries
     query = ORDER_UPDATE_SHIPPING_QUERY
     order_id = graphene.Node.to_global_id("Order", order.id)
     method_id = graphene.Node.to_global_id("ShippingMethod", shipping_method.id)

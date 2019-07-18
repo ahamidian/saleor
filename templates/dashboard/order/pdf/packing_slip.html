@@ -15,12 +15,12 @@
   <table width="100%" border="1" cellspacing="0">
     <thead>
       <tr>
-        {% if order.shipping_address %}
+        {% if order.address %}
           <th align="left" width="50%">
             {% trans "Shipping Details" context "Packing slip shipping details" %}
           </th>
         {% endif %}
-        <th align="left"{% if order.shipping_address %} width="50%"{% endif %}>
+        <th align="left"{% if order.address %} width="50%"{% endif %}>
           {% trans "Billing Details" context "Packing slip shipping details" %}
         </th>
       </tr>

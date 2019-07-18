@@ -82,12 +82,12 @@ def calculate_order_shipping(order: "Order") -> TaxedMoney:
     )
 
 
-def apply_taxes_to_shipping(price: Money, shipping_address: "Address") -> TaxedMoney:
+def apply_taxes_to_shipping(price: Money, address: "Address") -> TaxedMoney:
     """Apply taxes for shipping methods that user can use during checkout"""
-    if shipping_address:
+    if address:
         if settings.VATLAYER_ACCESS_KEY:
             return quantize_price(
-                vatlayer_interface.apply_taxes_to_shipping(price, shipping_address),
+                vatlayer_interface.apply_taxes_to_shipping(price, address),
                 price.currency,
             )
         if settings.AVATAX_USERNAME_OR_ACCOUNT and settings.AVATAX_PASSWORD_OR_LICENSE:

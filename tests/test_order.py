@@ -399,7 +399,7 @@ def test_queryset_ready_to_capture():
 
 
 def test_update_order_prices(order_with_lines):
-    address = order_with_lines.shipping_address
+    address = order_with_lines.address
     address.country = "DE"
     address.save()
 
@@ -426,7 +426,7 @@ def test_update_order_prices(order_with_lines):
 def test_order_payment_flow(
     request_checkout_with_item, client, address, customer_user, shipping_zone, settings
 ):
-    request_checkout_with_item.shipping_address = address
+    request_checkout_with_item.address = address
     request_checkout_with_item.address = address.get_copy()
     request_checkout_with_item.email = "test@example.com"
     request_checkout_with_item.shipping_method = shipping_zone.shipping_methods.first()

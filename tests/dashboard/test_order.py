@@ -473,7 +473,7 @@ def test_view_order_invoice(admin_client, order_with_lines):
 
 @pytest.mark.integration
 def test_view_order_invoice_without_shipping(admin_client, order_with_lines):
-    order_with_lines.shipping_address.delete()
+    order_with_lines.address.delete()
     # Regression test for #1536:
     url = reverse("dashboard:order-invoice", kwargs={"order_pk": order_with_lines.id})
     response = admin_client.get(url)
@@ -498,7 +498,7 @@ def test_view_fulfillment_packing_slips(admin_client, fulfilled_order):
 @pytest.mark.integration
 def test_view_fulfillment_packing_slips_without_shipping(admin_client, fulfilled_order):
     # Regression test for #1536
-    fulfilled_order.shipping_address.delete()
+    fulfilled_order.address.delete()
     fulfillment = fulfilled_order.fulfillments.first()
     url = reverse(
         "dashboard:fulfillment-packing-slips",
@@ -645,7 +645,7 @@ def test_view_create_from_draft_order_shipping_zone_not_valid(
     shipping_zone.save()
     # Shipping zone is not valid, as shipping address is listed outside the
     # shipping zone's countries
-    assert draft_order.shipping_address.country.code != "DE"
+    assert draft_order.address.country.code != "DE"
     draft_order.shipping_method = method
     draft_order.save()
     url = reverse(
@@ -663,7 +663,7 @@ def test_view_create_from_draft_order_shipping_zone_not_valid(
     assert error in errors
 
 
-def test_view_create_from_draft_order_no_shipping_address_shipping_not_required(  # noqa
+def test_view_create_from_draft_order_no_address_shipping_not_required(  # noqa
     admin_client, draft_order
 ):
     url = reverse(
@@ -696,7 +696,7 @@ def test_view_order_customer_edit_to_existing_user(
     draft_order.refresh_from_db()
     assert draft_order.user == customer_user
     assert not draft_order.user_email
-    assert draft_order.address == customer_user.tak_address
+    assert draft_order.address == customer_user.default_address
     redirect_url = reverse(
         "dashboard:order-details", kwargs={"order_pk": draft_order.pk}
     )
@@ -836,8 +836,8 @@ def test_view_order_address_edit(admin_client, order_with_lines, address_other_c
     response = admin_client.post(url, address_data)
     assert response.status_code == 302
 
-    order.refresh_from_db(fields=["shipping_address"])
-    assert new_address.as_data() == order.shipping_address.as_data()
+    order.refresh_from_db(fields=["address"])
+    assert new_address.as_data() == order.address.as_data()
 
 
 def test_view_order_shipping_remove(admin_client, draft_order):
@@ -902,7 +902,7 @@ def test_view_edit_discount(admin_client, draft_order, settings):
 
 def test_update_order_with_user_addresses(order):
     update_order_with_user_addresses(order)
-    assert order.address == order.user.tak_address
+    assert order.address == order.user.default_address
 
 
 def test_update_order_with_user_addresses_empty_user(order):
@@ -912,7 +912,7 @@ def test_update_order_with_user_addresses_empty_user(order):
     assert order.address is None
 
 
-def test_save_address_in_order_shipping_address(order, address):
+def test_save_address_in_order_address(order, address):
     old_address = order.address
     address.first_name = "Jane"
     address.save()
@@ -943,7 +943,7 @@ def test_remove_customer_from_order(order):
 
 
 def test_remove_customer_from_order_remove_addresses(order, customer_user):
-    order.address = customer_user.tak_address.get_copy()
+    order.address = customer_user.default_address.get_copy()
 
     remove_customer_from_order(order)
 

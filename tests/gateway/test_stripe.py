@@ -57,7 +57,7 @@ def gateway_config():
             "remember_me": True,
             "locale": "auto",
             "enable_billing_address": False,
-            "enable_shipping_address": False,
+            "enable_address": False,
         },
     )
 
@@ -172,7 +172,7 @@ def test_get_payment_billing_fullname(payment_dummy):
     assert get_payment_billing_fullname(payment_info) == expected_fullname
 
 
-def test_shipping_address_to_stripe_dict(address):
+def test_address_to_stripe_dict(address):
     address_data = AddressData(**address.as_data())
     expected_address_dict = {
         "line1": address.street_address_1,
@@ -193,7 +193,7 @@ def test_widget_with_default_options(stripe_payment, gateway_config):
         'data-amount="4242" data-billing-address="false" data-currency="USD" '
         'data-description="Total payment" data-email="test@example.com" '
         'data-image="image.gif" data-key="public" data-locale="auto" '
-        'data-name="Saleor" data-shipping-address="false" '
+        'data-name="Saleor" data-address="false" '
         'data-zip-code="false" src="https://checkout.stripe.com/checkout.js">'
         "</script>"
     )
@@ -250,17 +250,17 @@ def test_widget_with_enable_billing_address_option(stripe_payment, gateway_confi
     assert 'data-zip-code="false"' in widget.render()
 
 
-def test_widget_with_enable_shipping_address_option(stripe_payment, gateway_config):
+def test_widget_with_enable_address_option(stripe_payment, gateway_config):
     payment_info = create_payment_information(stripe_payment, FAKE_TOKEN)
     connection_params = gateway_config.connection_params
 
-    connection_params["enable_shipping_address"] = True
+    connection_params["enable_address"] = True
     widget = StripeCheckoutWidget(payment_info, connection_params)
-    assert 'data-shipping-address="true"' in widget.render()
+    assert 'data-address="true"' in widget.render()
 
-    connection_params["enable_shipping_address"] = False
+    connection_params["enable_address"] = False
     widget = StripeCheckoutWidget(payment_info, connection_params)
-    assert 'data-shipping-address="false"' in widget.render()
+    assert 'data-address="false"' in widget.render()
 
 
 def test_stripe_payment_form(stripe_payment, gateway_config):
@@ -321,7 +321,7 @@ def test_get_stripe_charge_payload_with_shipping(stripe_payment):
 
 
 def test_get_stripe_charge_payload_without_shipping(stripe_payment):
-    stripe_payment.order.shipping_address = None
+    stripe_payment.order.address = None
     payment_info = create_payment_information(stripe_payment, FAKE_TOKEN)
     billing_name = get_payment_billing_fullname(payment_info)
     expected_payload = {

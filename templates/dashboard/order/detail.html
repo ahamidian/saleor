@@ -184,7 +184,7 @@
         {% endif %}
       </div>
       <div class="row">
-        <div class="col s12 {% if order.shipping_address %}m6{% else %}m12{% endif %} l12 p6">
+        <div class="col s12 {% if order.address %}m6{% else %}m12{% endif %} l12 p6">
           <div class="card">
             <div class="card-content card-border">
               <span class="card-title black-text">
@@ -222,8 +222,8 @@
                     </a>
                   </span>
                 </span>
-                {% if order.shipping_address %}
-                  {% format_address order.shipping_address %}
+                {% if order.address %}
+                  {% format_address order.address %}
                 {% else %}
                   {% trans "No shipping address" context "Missing shipping address message" %}
                 {% endif %}

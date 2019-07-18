@@ -645,8 +645,8 @@ PAYMENT_GATEWAYS = {
                 "enable_billing_address": os.environ.get(
                     "STRIPE_ENABLE_BILLING_ADDRESS", False
                 ),
-                "enable_shipping_address": os.environ.get(
-                    "STRIPE_ENABLE_SHIPPING_ADDRESS", False
+                "enable_address": os.environ.get(
+                    "STRIPE_ENABLE_ADDRESS", False
                 ),
             },
         },

@@ -145,8 +145,8 @@ def test_query_user(
         staff_api_client, customer_user, address, permission_manage_users, media_root
 ):
     user = customer_user
-    user.tak_address.country = "US"
-    user.tak_address.save()
+    user.default_address.country = "US"
+    user.default_address.save()
     user.addresses.add(address.get_copy())
 
     avatar_mock = MagicMock(spec=File)
@@ -230,17 +230,17 @@ def test_query_user(
     for address in data["addresses"]:
         if address["isDefaultShippingAddress"]:
             address_id = graphene.Node.to_global_id(
-                "Address", user.tak_address.id
+                "Address", user.default_address.id
             )
             assert address["id"] == address_id
         if address["isDefaultBillingAddress"]:
             address_id = graphene.Node.to_global_id(
-                "Address", user.tak_address.id
+                "Address", user.default_address.id
             )
             assert address["id"] == address_id
 
     address = data["defaultShippingAddress"]
-    user_address = user.tak_address
+    user_address = user.default_address
     assert address["firstName"] == user_address.first_name
     assert address["lastName"] == user_address.last_name
     assert address["companyName"] == user_address.company_name
@@ -256,7 +256,7 @@ def test_query_user(
     assert address["isDefaultBillingAddress"] is None
 
     address = data["defaultBillingAddress"]
-    user_address = user.tak_address
+    user_address = user.default_address
     assert address["firstName"] == user_address.first_name
     assert address["lastName"] == user_address.last_name
     assert address["companyName"] == user_address.company_name
@@ -617,7 +617,7 @@ def test_customer_create(
     User = get_user_model()
     new_customer = User.objects.get(email=email)
 
-    address = new_customer.tak_address
+    address = new_customer.default_address
     assert address == address
     assert address.pk != address.pk
 
@@ -679,8 +679,8 @@ def test_customer_update(
 
     # this test requires addresses to be set and checks whether new address
     # instances weren't created, but the existing ones got updated
-    assert customer_user.tak_address
-    address_pk = customer_user.tak_address.pk
+    assert customer_user.default_address
+    address_pk = customer_user.default_address.pk
 
     user_id = graphene.Node.to_global_id("User", customer_user.id)
     first_name = "new_first_name"
@@ -709,7 +709,7 @@ def test_customer_update(
     customer = User.objects.get(email=customer_user.email)
 
     # check that existing instances are updated
-    address = customer.tak_address
+    address = customer.default_address
     assert address.pk == address_pk
 
     assert address.street_address_1 == new_street_address
@@ -840,10 +840,10 @@ def test_logged_customer_update(user_api_client, graphql_address_data):
     # instances weren't created, but the existing ones got updated
     user = user_api_client.user
     new_first_name = graphql_address_data["firstName"]
-    assert user.tak_address
-    assert user.tak_address
-    assert user.tak_address.first_name != new_first_name
-    assert user.tak_address.first_name != new_first_name
+    assert user.default_address
+    assert user.default_address
+    assert user.default_address.first_name != new_first_name
+    assert user.default_address.first_name != new_first_name
     variables = {"billing": graphql_address_data, "shipping": graphql_address_data}
     response = user_api_client.post_graphql(UPDATE_LOGGED_CUSTOMER_QUERY, variables)
     content = get_graphql_content(response)
@@ -851,12 +851,12 @@ def test_logged_customer_update(user_api_client, graphql_address_data):
     assert not data["errors"]
 
     # check that existing instances are updated
-    address_pk = user.tak_address.pk
+    address_pk = user.default_address.pk
     user = User.objects.get(email=user.email)
-    assert user.tak_address.pk == address_pk
+    assert user.default_address.pk == address_pk
 
-    assert user.tak_address.first_name == new_first_name
-    assert user.tak_address.first_name == new_first_name
+    assert user.default_address.first_name == new_first_name
+    assert user.default_address.first_name == new_first_name
 
 
 def test_logged_customer_update_anonymous_user(api_client):
@@ -1377,8 +1377,8 @@ mutation($address_id: ID!, $user_id: ID!, $type: AddressTypeEnum!) {
 def test_set_default_address(
         staff_api_client, address_other_country, customer_user, permission_manage_users
 ):
-    customer_user.tak_address = None
-    customer_user.tak_address = None
+    customer_user.default_address = None
+    customer_user.default_address = None
     customer_user.save()
 
     # try to set an address that doesn't belong to that user
@@ -1584,7 +1584,7 @@ def test_customer_create_default_address(user_api_client, graphql_address_data):
 
     user.refresh_from_db()
     assert user.addresses.count() == nr_of_addresses + 1
-    assert user.tak_address.id == int(
+    assert user.default_address.id == int(
         graphene.Node.from_global_id(data["address"]["id"])[1]
     )
 
@@ -1597,7 +1597,7 @@ def test_customer_create_default_address(user_api_client, graphql_address_data):
 
     user.refresh_from_db()
     assert user.addresses.count() == nr_of_addresses + 2
-    assert user.tak_address.id == int(
+    assert user.default_address.id == int(
         graphene.Node.from_global_id(data["address"]["id"])[1]
     )
 
@@ -1623,11 +1623,11 @@ mutation($id: ID!, $type: AddressTypeEnum!) {
 
 def test_customer_set_address_as_default(user_api_client, address):
     user = user_api_client.user
-    user.tak_address = None
-    user.tak_address = None
+    user.default_address = None
+    user.default_address = None
     user.save()
-    assert not user.tak_address
-    assert not user.tak_address
+    assert not user.default_address
+    assert not user.default_address
 
     assert address in user.addresses.all()
 
@@ -1642,7 +1642,7 @@ def test_customer_set_address_as_default(user_api_client, address):
     assert not data["errors"]
 
     user.refresh_from_db()
-    assert user.tak_address == address
+    assert user.default_address == address
 
     variables["type"] = AddressType.BILLING.upper()
     response = user_api_client.post_graphql(query, variables)
@@ -1651,18 +1651,18 @@ def test_customer_set_address_as_default(user_api_client, address):
     assert not data["errors"]
 
     user.refresh_from_db()
-    assert user.tak_address == address
+    assert user.default_address == address
 
 
 def test_customer_change_default_address(user_api_client, address_other_country):
     user = user_api_client.user
-    assert user.tak_address
-    assert user.tak_address
-    address = user.tak_address
+    assert user.default_address
+    assert user.default_address
+    address = user.default_address
     assert address in user.addresses.all()
     assert address_other_country not in user.addresses.all()
 
-    user.tak_address = address_other_country
+    user.default_address = address_other_country
     user.save()
     user.refresh_from_db()
     assert address_other_country not in user.addresses.all()
@@ -1678,7 +1678,7 @@ def test_customer_change_default_address(user_api_client, address_other_country)
     assert not data["errors"]
 
     user.refresh_from_db()
-    assert user.tak_address == address
+    assert user.default_address == address
     assert address_other_country in user.addresses.all()
 
 
@@ -1960,10 +1960,10 @@ def test_query_customers_with_filter_placed_orders__(
         ({"search": "example.com"}, 2),
         ({"search": "Alice"}, 1),
         ({"search": "Kowalski"}, 1),
-        ({"search": "John"}, 1),  # tak_address__first_name
-        ({"search": "Doe"}, 1),  # tak_address__last_name
-        ({"search": "wroc"}, 1),  # tak_address__city
-        ({"search": "pl"}, 2),  # tak_address__country, email
+        ({"search": "John"}, 1),  # default_address__first_name
+        ({"search": "Doe"}, 1),  # default_address__last_name
+        ({"search": "wroc"}, 1),  # default_address__city
+        ({"search": "pl"}, 2),  # default_address__country, email
     ],
 )
 def test_query_customer_memebers_with_filter_search(
@@ -1986,7 +1986,7 @@ def test_query_customer_memebers_with_filter_search(
             User(
                 email="third@example.com",
                 is_active=True,
-                tak_address=address,
+                default_address=address,
             ),
         ]
     )
@@ -2036,10 +2036,10 @@ def test_query_staff_memebers_with_filter_status(
         ({"search": "example.com"}, 3),
         ({"search": "Alice"}, 1),
         ({"search": "Kowalski"}, 1),
-        ({"search": "John"}, 1),  # tak_address__first_name
-        ({"search": "Doe"}, 1),  # tak_address__last_name
-        ({"search": "wroc"}, 1),  # tak_address__city
-        ({"search": "pl"}, 3),  # tak_address__country, email
+        ({"search": "John"}, 1),  # default_address__first_name
+        ({"search": "Doe"}, 1),  # default_address__last_name
+        ({"search": "wroc"}, 1),  # default_address__city
+        ({"search": "pl"}, 3),  # default_address__country, email
     ],
 )
 def test_query_staff_memebers_with_filter_search(
@@ -2064,7 +2064,7 @@ def test_query_staff_memebers_with_filter_search(
                 email="third@example.com",
                 is_staff=True,
                 is_active=True,
-                tak_address=address,
+                default_address=address,
             ),
             User(
                 email="customer@example.com",

@@ -23,7 +23,7 @@ from ..utils import (
     update_checkout_quantity,
 )
 from .discount import add_voucher_form, validate_voucher
-from .shipping import anonymous_user_shipping_address_view, user_shipping_address_view
+from .shipping import anonymous_user_address_view, user_address_view
 from .summary import (
     anonymous_summary_without_shipping,
     summary_with_shipping_view,
@@ -32,7 +32,7 @@ from .summary import (
 from .validators import (
     validate_checkout,
     validate_is_shipping_required,
-    validate_shipping_address,
+    validate_address,
     validate_shipping_method,
 )
 
@@ -52,7 +52,7 @@ def checkout_login(request, checkout):
 @validate_is_shipping_required
 def checkout_start(request, checkout):
     """Redirect to the initial step of checkout."""
-    return redirect("checkout:shipping-address")
+    return redirect("checkout:address")
 
 
 @get_or_empty_db_checkout(Checkout.objects.for_display())
@@ -60,18 +60,18 @@ def checkout_start(request, checkout):
 @validate_checkout
 @validate_is_shipping_required
 @add_voucher_form
-def checkout_shipping_address(request, checkout):
+def checkout_address(request, checkout):
     """Display the correct shipping address step."""
     if request.user.is_authenticated:
-        return user_shipping_address_view(request, checkout)
-    return anonymous_user_shipping_address_view(request, checkout)
+        return user_address_view(request, checkout)
+    return anonymous_user_address_view(request, checkout)
 
 
 @get_or_empty_db_checkout(Checkout.objects.for_display())
 @validate_voucher
 @validate_checkout
 @validate_is_shipping_required
-@validate_shipping_address
+@validate_address
 @add_voucher_form
 def checkout_shipping_method(request, checkout):
     """Display the shipping method selection step."""
@@ -101,7 +101,7 @@ def checkout_order_summary(request, checkout):
     """Display the correct order summary."""
     if checkout.is_shipping_required():
         view = validate_shipping_method(summary_with_shipping_view)
-        view = validate_shipping_address(view)
+        view = validate_address(view)
         return view(request, checkout)
     if request.user.is_authenticated:
         return summary_without_shipping(request, checkout)

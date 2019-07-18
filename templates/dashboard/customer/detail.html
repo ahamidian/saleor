@@ -180,8 +180,8 @@
               <span class="card-title black-text">
                 {% trans "Default shipping address" context "Customer default shipping address card title" %}
               </span>
-              {% if customer.tak_address %}
-                {% with customer.tak_address as address %}
+              {% if customer.default_address %}
+                {% with customer.default_address as address %}
                   {% include 'dashboard/includes/_address.html' with address=address only %}
                 {% endwith %}
               {% else %}
@@ -200,8 +200,8 @@
               <span class="card-title black-text">
                 {% trans "Default billing address" context "Customer default billing address card title" %}
               </span>
-              {% if customer.tak_address %}
-                {% with customer.tak_address as address %}
+              {% if customer.default_address %}
+                {% with customer.default_address as address %}
                   {% include 'dashboard/includes/_address.html' with address=address only %}
                 {% endwith %}
               {% else %}

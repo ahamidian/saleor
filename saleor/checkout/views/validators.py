@@ -21,7 +21,7 @@ def validate_checkout(view):
     return func
 
 
-def validate_shipping_address(view):
+def validate_address(view):
     """Decorate a view making it require a valid shipping address.
 
     If either the shipping address or customer email is empty, redirect to the
@@ -32,12 +32,12 @@ def validate_shipping_address(view):
 
     @wraps(view)
     def func(request, checkout):
-        if not checkout.email or not checkout.shipping_address:
-            return redirect("checkout:shipping-address")
+        if not checkout.email or not checkout.address:
+            return redirect("checkout:address")
         try:
-            checkout.shipping_address.full_clean()
+            checkout.address.full_clean()
         except ValidationError:
-            return redirect("checkout:shipping-address")
+            return redirect("checkout:address")
         return view(request, checkout)
 
     return func

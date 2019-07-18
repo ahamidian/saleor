@@ -265,14 +265,14 @@ class BillingAddressChoiceForm(AddressChoiceForm):
     """Choose one of user's addresses, a shipping one or to create new."""
 
     NEW_ADDRESS = "new_address"
-    SHIPPING_ADDRESS = "shipping_address"
+    ADDRESS = "address"
     CHOICES = [
         (
             NEW_ADDRESS,
             pgettext_lazy("Billing addresses form choice", "Enter a new address"),
         ),
         (
-            SHIPPING_ADDRESS,
+            ADDRESS,
             pgettext_lazy("Billing addresses form choice", "Same as shipping"),
         ),
     ]
@@ -280,7 +280,7 @@ class BillingAddressChoiceForm(AddressChoiceForm):
     address = forms.ChoiceField(
         label=pgettext_lazy("Billing addresses form field label", "Address"),
         choices=CHOICES,
-        initial=SHIPPING_ADDRESS,
+        initial=ADDRESS,
         widget=forms.RadioSelect,
     )
 
@@ -292,14 +292,14 @@ class ShippingMethodChoiceField(forms.ModelChoiceField):
     prices.
     """
 
-    shipping_address = None
+    address = None
     widget = forms.RadioSelect()
 
     def label_from_instance(self, obj):
         """Return a friendly label for the shipping method."""
         if display_gross_prices():
             price = apply_taxes_to_shipping(
-                obj.price, shipping_address=self.shipping_address
+                obj.price, address=self.address
             ).gross
         else:
             price = obj.price
@@ -322,15 +322,15 @@ class CheckoutShippingMethodForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         discounts = kwargs.pop("discounts")
         super().__init__(*args, **kwargs)
-        shipping_address = self.instance.shipping_address
-        country_code = shipping_address.country.code
+        address = self.instance.address
+        country_code = address.country.code
         qs = ShippingMethod.objects.applicable_shipping_methods(
             price=calculate_checkout_subtotal(self.instance, discounts).gross,
             weight=self.instance.get_total_weight(),
             country_code=country_code,
         )
         self.fields["shipping_method"].queryset = qs
-        self.fields["shipping_method"].shipping_address = shipping_address
+        self.fields["shipping_method"].address = address
 
         if self.initial.get("shipping_method") is None:
             shipping_methods = qs.all()

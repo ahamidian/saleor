@@ -7,7 +7,7 @@ from saleor.checkout.utils import add_voucher_to_checkout
 from saleor.discount import DiscountInfo
 from tests.api.test_checkout import (
     MUTATION_CHECKOUT_LINES_DELETE,
-    MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE,
+    MUTATION_CHECKOUT_ADDRESS_UPDATE,
 )
 from tests.api.utils import get_graphql_content
 
@@ -111,7 +111,7 @@ def test_checkout_lines_delete_with_not_applicable_voucher(
     assert checkout_with_item.voucher_code is None
 
 
-def test_checkout_shipping_address_update_with_not_applicable_voucher(
+def test_checkout_address_update_with_not_applicable_voucher(
     user_api_client,
     checkout_with_item,
     voucher_shipping_type,
@@ -119,13 +119,13 @@ def test_checkout_shipping_address_update_with_not_applicable_voucher(
     address_other_country,
     shipping_method,
 ):
-    assert checkout_with_item.shipping_address is None
+    assert checkout_with_item.address is None
     assert checkout_with_item.voucher_code is None
 
-    checkout_with_item.shipping_address = address_other_country
+    checkout_with_item.address = address_other_country
     checkout_with_item.shipping_method = shipping_method
-    checkout_with_item.save(update_fields=["shipping_address", "shipping_method"])
-    assert checkout_with_item.shipping_address.country == address_other_country.country
+    checkout_with_item.save(update_fields=["address", "shipping_method"])
+    assert checkout_with_item.address.country == address_other_country.country
 
     voucher = voucher_shipping_type
     assert voucher.countries[0].code == address_other_country.country
@@ -137,16 +137,16 @@ def test_checkout_shipping_address_update_with_not_applicable_voucher(
     new_address = graphql_address_data
     variables = {"checkoutId": checkout_id, "shippingAddress": new_address}
     response = user_api_client.post_graphql(
-        MUTATION_CHECKOUT_SHIPPING_ADDRESS_UPDATE, variables
+        MUTATION_CHECKOUT_ADDRESS_UPDATE, variables
     )
     content = get_graphql_content(response)
     data = content["data"]["checkoutShippingAddressUpdate"]
     assert not data["errors"]
 
     checkout_with_item.refresh_from_db()
-    checkout_with_item.shipping_address.refresh_from_db()
+    checkout_with_item.address.refresh_from_db()
 
-    assert checkout_with_item.shipping_address.country == new_address["country"]
+    assert checkout_with_item.address.country == new_address["country"]
     assert checkout_with_item.voucher_code is None
 
 

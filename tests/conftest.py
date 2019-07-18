@@ -200,7 +200,7 @@ def customer_user(address):  # pylint: disable=W0613
     user = User.objects.create_user(
         "test@example.com",
         "password",
-        tak_address=default_address
+        default_address=default_address
     )
     user.addresses.add(default_address)
     return user
@@ -231,7 +231,7 @@ def request_checkout_with_item(product, request_checkout):
 
 @pytest.fixture
 def order(customer_user):
-    address = customer_user.tak_address.get_copy()
+    address = customer_user.default_address.get_copy()
     return Order.objects.create(
         address=address, user_email=customer_user.email, user=customer_user
     )
@@ -585,7 +585,7 @@ def product_list_published(product_list):
 
 @pytest.fixture
 def order_list(customer_user):
-    address = customer_user.tak_address.get_copy()
+    address = customer_user.default_address.get_copy()
     data = {
         "address": address,
         "user": customer_user,

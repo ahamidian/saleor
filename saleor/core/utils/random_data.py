@@ -310,7 +310,7 @@ def create_fake_user():
     )
 
     user.addresses.add(address)
-    user.tak_address = address
+    user.default_address = address
     user.is_active = True
     user.save()
     return user
@@ -405,10 +405,10 @@ def create_fake_order(discounts, max_order_lines=5):
         [None, User.objects.filter(is_superuser=False).order_by("?").first()]
     )
     if user:
-        address = user.tak_address
+        address = user.default_address
         order_data = {
             "user": user,
-            "address": user.tak_address
+            "address": user.default_address
         }
     else:
         address = create_address()

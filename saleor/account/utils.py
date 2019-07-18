@@ -19,8 +19,8 @@ def store_user_address(user, address, address_type):
 
 
 def set_user_default_address(user, address):
-    user.tak_address = address
-    user.save(update_fields=["tak_address"])
+    user.default_address = address
+    user.save(update_fields=["default_address"])
 
 
 def change_user_default_address(user, address, address_type):

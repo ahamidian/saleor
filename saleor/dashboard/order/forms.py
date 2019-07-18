@@ -75,11 +75,11 @@ class CreateOrderFromDraftForm(forms.ModelForm):
             )
         if self.instance.is_shipping_required():
             method = self.instance.shipping_method
-            shipping_address = self.instance.shipping_address
+            address = self.instance.address
             shipping_not_valid = (
                 method
-                and shipping_address
-                and shipping_address.country.code not in method.shipping_zone.countries
+                and address
+                and address.country.code not in method.shipping_zone.countries
             )  # noqa
             if shipping_not_valid:
                 errors.append(
@@ -99,15 +99,15 @@ class CreateOrderFromDraftForm(forms.ModelForm):
         self.instance.status = OrderStatus.UNFULFILLED
         if self.instance.user:
             self.instance.user_email = self.instance.user.email
-        remove_shipping_address = False
+        remove_address = False
         if not self.instance.is_shipping_required():
             self.instance.shipping_method_name = None
             self.instance.shipping_price = zero_taxed_money()
-            if self.instance.shipping_address:
-                remove_shipping_address = True
+            if self.instance.address:
+                remove_address = True
         super().save()
-        if remove_shipping_address:
-            self.instance.shipping_address.delete()
+        if remove_address:
+            self.instance.address.delete()
         return self.instance
 
 
@@ -201,8 +201,8 @@ class OrderShippingForm(forms.ModelForm):
         if method:
             method_field.set_initial(method, label=method.get_ajax_label())
 
-        if self.instance.shipping_address:
-            country_code = self.instance.shipping_address.country.code
+        if self.instance.address:
+            country_code = self.instance.address.country.code
             queryset = method_field.queryset.filter(
                 shipping_zone__countries__contains=country_code
             )

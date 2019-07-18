@@ -11,10 +11,10 @@ USER_SEARCH_FIELDS = (
     "email",
     "first_name",
     "last_name",
-    "tak_address__first_name",
-    "tak_address__last_name",
-    "tak_address__city",
-    "tak_address__country",
+    "default_address__first_name",
+    "default_address__last_name",
+    "default_address__city",
+    "default_address__country",
 )
 
 

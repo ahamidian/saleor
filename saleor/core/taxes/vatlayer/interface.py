@@ -87,8 +87,8 @@ def calculate_checkout_line_total(
     return apply_taxes_to_product(checkout_line.variant.product, price, country)
 
 
-def apply_taxes_to_shipping(price: Money, shipping_address: "Address"):
-    taxes = get_taxes_for_country(shipping_address.country)
+def apply_taxes_to_shipping(price: Money, address: "Address"):
+    taxes = get_taxes_for_country(address.country)
     return get_taxed_shipping_price(price, taxes)
 
 

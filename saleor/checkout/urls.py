@@ -14,7 +14,7 @@ checkout_urlpatterns = [
         r"^shipping-options/$", views.checkout_shipping_options, name="shipping-options"
     ),
     url(
-        r"^shipping-address/", views.checkout_shipping_address, name="shipping-address"
+        r"^address/", views.checkout_address, name="address"
     ),
     url(r"^shipping-method/", views.checkout_shipping_method, name="shipping-method"),
     url(r"^summary/", views.checkout_order_summary, name="summary"),

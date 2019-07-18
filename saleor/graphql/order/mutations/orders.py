@@ -23,7 +23,7 @@ from ...shipping.types import ShippingMethod
 
 
 def clean_order_update_shipping(order, method):
-    if not order.shipping_address:
+    if not order.address:
         raise ValidationError(
             {
                 "order": "Cannot choose a shipping method for an order without "
@@ -34,7 +34,7 @@ def clean_order_update_shipping(order, method):
     valid_methods = ShippingMethodModel.objects.applicable_shipping_methods(
         price=order.get_subtotal().gross.amount,
         weight=order.get_total_weight(),
-        country_code=order.shipping_address.country.code,
+        country_code=order.address.country.code,
     )
     valid_methods = valid_methods.values_list("id", flat=True)
     if method.pk not in valid_methods:

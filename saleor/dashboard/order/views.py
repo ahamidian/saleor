@@ -734,8 +734,8 @@ def ajax_order_shipping_methods_list(request, order_pk):
         "name", "price"
     )
 
-    if order.shipping_address:
-        country_code = order.shipping_address.country.code
+    if order.address:
+        country_code = order.address.country.code
         queryset = queryset.filter(shipping_zone__countries__contains=country_code)
 
     search_query = request.GET.get("q", "")

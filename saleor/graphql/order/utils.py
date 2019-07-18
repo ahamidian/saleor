@@ -10,11 +10,11 @@ def validate_total_quantity(order):
 
 def validate_shipping_method(order):
     method = order.shipping_method
-    shipping_address = order.shipping_address
+    address = order.address
     shipping_not_valid = (
         method
-        and shipping_address
-        and shipping_address.country.code not in method.shipping_zone.countries
+        and address
+        and address.country.code not in method.shipping_zone.countries
     )  # noqa
     if shipping_not_valid:
         raise ValidationError(
@@ -46,12 +46,12 @@ def validate_draft_order(order):
 def applicable_shipping_methods(obj, price):
     if not obj.is_shipping_required():
         return []
-    if not obj.shipping_address:
+    if not obj.address:
         return []
 
     qs = shipping_models.ShippingMethod.objects
     return qs.applicable_shipping_methods(
         price=price,
         weight=obj.get_total_weight(),
-        country_code=obj.shipping_address.country.code,
+        country_code=obj.address.country.code,
     )

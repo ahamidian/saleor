@@ -1997,13 +1997,13 @@ msgctxt "Checkout payment primary action"
 msgid "Place order"
 msgstr "Porosit"
 
-#: templates/checkout/shipping_address.html:8
+#: templates/checkout/address.html:8
 #: templates/checkout/shipping_method.html:7
 msgctxt "Checkout shipping address title"
 msgid "Shipping address"
 msgstr "Adresa e dergeses"
 
-#: templates/checkout/shipping_address.html:21
+#: templates/checkout/address.html:21
 msgctxt "Checkout shipping address primary action"
 msgid "Continue"
 msgstr "Vazhdo"

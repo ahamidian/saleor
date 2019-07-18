@@ -19,7 +19,7 @@ from .utils import remove_staff_member
 def staff_list(request):
     staff_members = (
         User.objects.filter(is_staff=True)
-        .prefetch_related("tak_address")
+        .prefetch_related("default_address")
         .order_by("email")
     )
     staff_filter = StaffFilter(request.GET, queryset=staff_members)

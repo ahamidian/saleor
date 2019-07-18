@@ -60,7 +60,7 @@ def test_view_checkout_with_taxes(
 ):
     settings.DEFAULT_COUNTRY = "PL"
     checkout = request_checkout_with_item
-    checkout.shipping_address = address
+    checkout.address = address
     checkout.save()
     product = checkout.lines.first().variant.product
     product.meta = {"taxes": {"vatlayer": {"code": "standard", "description": ""}}}

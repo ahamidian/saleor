@@ -61,8 +61,8 @@ def update_order_with_user_addresses(order):
 
     if order.user:
         order.address = (
-            order.user.tak_address.get_copy()
-            if order.user.tak_address
+            order.user.default_address.get_copy()
+            if order.user.default_address
             else None
         )
 
@@ -184,7 +184,7 @@ def remove_customer_from_order(order):
 
     if customer:
         equal_addresses = addresses_are_equal(
-            order.address, customer.tak_address
+            order.address, customer.default_address
         )
         if equal_addresses:
             order.address.delete()

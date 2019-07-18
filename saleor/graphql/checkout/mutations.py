@@ -47,7 +47,7 @@ def clean_shipping_method(checkout, method, discounts, country_code=None, remove
     if not checkout.is_shipping_required():
         raise ValidationError("This checkout does not requires shipping.")
 
-    if not checkout.shipping_address:
+    if not checkout.address:
         raise ValidationError(
             "Cannot choose a shipping method for a checkout without the "
             "shipping address."
@@ -56,7 +56,7 @@ def clean_shipping_method(checkout, method, discounts, country_code=None, remove
     valid_methods = ShippingMethodModel.objects.applicable_shipping_methods(
         price=calculate_checkout_subtotal(checkout, discounts).gross.amount,
         weight=checkout.get_total_weight(),
-        country_code=country_code or checkout.shipping_address.country.code,
+        country_code=country_code or checkout.address.country.code,
     )
     valid_methods = valid_methods.values_list("id", flat=True)
 
@@ -136,15 +136,15 @@ class CheckoutCreate(ModelMutation, I18nMixin):
             cleaned_input["variants"] = variants
             cleaned_input["quantities"] = quantities
 
-        tak_address = None
+        default_address = None
         if user.is_authenticated:
-            tak_address = user.tak_address
+            default_address = user.default_address
 
         if "address" in data:
             address = cls.validate_address(data["address"])
             cleaned_input["address"] = address
         else:
-            cleaned_input["address"] = tak_address
+            cleaned_input["address"] = default_address
 
         # Use authenticated user's email as default email
         if user.is_authenticated:
@@ -158,7 +158,7 @@ class CheckoutCreate(ModelMutation, I18nMixin):
         address = cleaned_input.get("address")
         if address:
             address.save()
-            instance.shipping_address = address.get_copy()
+            instance.address = address.get_copy()
 
         instance.save()
 
