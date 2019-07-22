@@ -80,9 +80,9 @@
             <a href="{% url "checkout:login" %}" class="btn btn-primary float-right checkout-preview__submit">
             {% trans "Checkout" context "Checkout primary action" %}
           </a>
-            <button class="btn secondary float-right checkout-preview__clear" data-action="{% url 'checkout:clear' %}">
-            {% trans "Clear cart" context "checkout page: secondary action, empty the checkout" %}
-          </button>
+{#            <button class="btn secondary float-right checkout-preview__clear" data-action="{% url 'checkout:clear' %}">#}
+{#            {% trans "Clear cart" context "checkout page: secondary action, empty the checkout" %}#}
+{#          </button>#}
         </div>
       </div>
     {% else %}

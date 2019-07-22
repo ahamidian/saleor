@@ -925,21 +925,38 @@ def remove_voucher_from_checkout(checkout: Checkout):
     )
 
 
+# Todo Amirhossein
+# def is_valid_shipping_method(checkout, discounts):
+#     """Check if shipping method is valid and remove (if not)."""
+#     if not checkout.shipping_method:
+#         return False
+#
+#     valid_methods = ShippingMethod.objects.applicable_shipping_methods(
+#         price=calculate_checkout_subtotal(checkout, discounts).gross,
+#         weight=checkout.get_total_weight(),
+#         country_code=checkout.address.country.code,
+#     )
+#     if checkout.shipping_method not in valid_methods:
+#         clear_shipping_method(checkout)
+#         return False
+#     return True
 def is_valid_shipping_method(checkout, discounts):
     """Check if shipping method is valid and remove (if not)."""
-    if not checkout.shipping_method:
-        return False
 
     valid_methods = ShippingMethod.objects.applicable_shipping_methods(
         price=calculate_checkout_subtotal(checkout, discounts).gross,
         weight=checkout.get_total_weight(),
         country_code=checkout.address.country.code,
     )
+    checkout.shipping_method=valid_methods.first()
+    checkout.save(update_fields=["shipping_method"])
+    if not checkout.shipping_method:
+        return False
+
     if checkout.shipping_method not in valid_methods:
         clear_shipping_method(checkout)
         return False
     return True
-
 
 def clear_shipping_method(checkout):
     checkout.shipping_method = None

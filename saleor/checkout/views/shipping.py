@@ -35,8 +35,11 @@ def user_address_view(request, checkout):
     addresses_form, address_form, updated = update_address_in_checkout(
         checkout, user_addresses, request.POST or None, request.country
     )
+    # Todo Amirhossein
+    # if updated:
+    #     return redirect("checkout:shipping-method")
     if updated:
-        return redirect("checkout:shipping-method")
+        return redirect("checkout:summary")
 
     ctx = get_checkout_context(checkout, request.discounts)
     ctx.update(
