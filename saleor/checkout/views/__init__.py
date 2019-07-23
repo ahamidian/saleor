@@ -1,9 +1,13 @@
 """Checkout related views."""
 from django.conf import settings
-from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.response import TemplateResponse
 
+from saleor.checkout.views.summary import _handle_order_placement
+from saleor.core.taxes.interface import calculate_checkout_subtotal
+from saleor.shipping.models import ShippingMethod
 from ...account.forms import LoginForm
 from ...core.taxes import (
     get_display_price,
@@ -47,12 +51,28 @@ def checkout_login(request, checkout):
     return TemplateResponse(request, "checkout/login.html", ctx)
 
 
+# Todo Amirhossein
+# @get_or_empty_db_checkout(Checkout.objects.for_display())
+# @validate_checkout
+# @validate_is_shipping_required
+# def checkout_start(request, checkout):
+#     """Redirect to the initial step of checkout."""
+#     return redirect("checkout:address")
+
 @get_or_empty_db_checkout(Checkout.objects.for_display())
 @validate_checkout
 @validate_is_shipping_required
+@login_required
 def checkout_start(request, checkout):
-    """Redirect to the initial step of checkout."""
-    return redirect("checkout:address")
+    checkout.email = request.user.email
+    checkout.address = request.user.default_address
+    checkout.shipping_method = ShippingMethod.objects.applicable_shipping_methods(
+        price=calculate_checkout_subtotal(checkout, []).gross,
+        weight=checkout.get_total_weight(),
+        country_code=checkout.address.country.code,
+    ).first()
+    checkout.save(update_fields=["email","address","shipping_method"])
+    return _handle_order_placement(request, checkout)
 
 
 @get_or_empty_db_checkout(Checkout.objects.for_display())
